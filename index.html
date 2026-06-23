@@ -5,53 +5,51 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>トリミングサロン ご予約フォーム</title>
     <link rel="stylesheet" href="style.css">
-    <!-- Supabase CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
     <header>
-        <h1>トリミングサロン ご予約フォーム</h1>
+        <h1>ANELLA CAFE 南浦和店</h1>
+        <p>トリミングサロン ご予約フォーム</p>
     </header>
 
     <main class="container">
         <form id="reservation-form">
             <h2>お客様・わんちゃん情報入力</h2>
-
-            <!-- 飼い主情報 -->
+            
             <div class="form-group">
                 <label for="owner_name">飼い主さんのお名前 <span class="required">*</span></label>
-                <input type="text" id="owner_name" required placeholder="例：山田 太郎">
+                <input type="text" id="owner_name" required placeholder="例：海老原 那哉">
             </div>
 
             <div class="form-group">
                 <label for="owner_kana">飼い主さんのお名前のフリガナ（カタカナ） <span class="required">*</span></label>
-                <input type="text" id="owner_kana" required placeholder="例：ヤマダ タロウ" pattern="^[ァ-ヶー・]+$">
+                <input type="text" id="owner_kana" required placeholder="例：エビハラ トモヤ" pattern="^[ァ-ヶー\s]+$">
             </div>
 
             <div class="form-group">
-                <label for="phone">飼い主さんの連絡先（電話番号） <span class="required">*</span></label>
-                <input type="tel" id="phone" required placeholder="例：09012345678">
+                <label for="phone">電話番号 <span class="required">*</span></label>
+                <input type="tel" id="phone" required placeholder="例：07038617714">
             </div>
 
             <div class="form-group">
-                <label for="address">住所 <span class="required">*</span></label>
-                <input type="text" id="address" required placeholder="例：埼玉県さいたま市南区南浦和2-28-16 ハイグレード南浦和1F">
+                <label for="address">ご住所 <span class="required">*</span></label>
+                <input type="text" id="address" required placeholder="例：東京都さいたま市...">
             </div>
 
             <div class="form-group">
-                <label for="emergency_phone">緊急連絡先（電話番号） <span class="required">*</span></label>
-                <input type="tel" id="emergency_phone" required placeholder="例：09087654321">
+                <label for="emergency_phone">緊急連絡先（当日連絡がつく番号） <span class="required">*</span></label>
+                <input type="tel" id="emergency_phone" required placeholder="例：090XXXXXXXX">
             </div>
 
             <div class="form-group">
-                <label for="trigger_text">ご来店のきっかけ <span class="required">*</span></label>
-                <input type="text" id="trigger_text" required placeholder="例：インスタグラムを見て、看板を見てなど">
+                <label for="trigger_text">当店を知ったきっかけ</label>
+                <input type="text" id="trigger_text" placeholder="例：インスタグラム、ご紹介など">
             </div>
 
-            <!-- わんちゃん情報 -->
             <div class="form-group">
-                <label for="dog_name">わんちゃんの名前 <span class="required">*</span></label>
-                <input type="text" id="dog_name" required placeholder="例：ポチ">
+                <label for="dog_name">わんちゃんのお名前 <span class="required">*</span></label>
+                <input type="text" id="dog_name" required placeholder="例：うに">
             </div>
 
             <div class="form-group">
@@ -61,103 +59,82 @@
 
             <div class="form-group">
                 <label for="dog_birthday">わんちゃんの生年月日・年齢 <span class="required">*</span></label>
-                <input type="text" id="dog_birthday" required placeholder="例：2024年1月1日、または推定3歳など">
-            </div>
-
-            <div class="form-group">
-                <label for="regular_hospital">かかりつけ病院 <span class="required">*</span></label>
-                <input type="text" id="regular_hospital" required placeholder="例：○○動物病院">
-            </div>
-
-            <div class="form-group">
-                <label for="allergies">アレルギーの有無 <span class="required">*</span></label>
-                <input type="text" id="allergies" required placeholder="例：なし、または鶏肉アレルギーなど">
-            </div>
-
-            <div class="form-group">
-                <label for="favorite_spots">触られるのが好きなところ <span class="required">*</span></label>
-                <input type="text" id="favorite_spots" required placeholder="例：あたま、お腹">
-            </div>
-
-            <div class="form-group">
-                <label for="dislike_spots">触られるのが苦手なところ <span class="required">*</span></label>
-                <input type="text" id="dislike_spots" required placeholder="例：足先、しっぽ">
+                <input type="text" id="dog_birthday" required placeholder="例：2023年5月1日（3歳）">
             </div>
 
             <div class="form-group">
                 <label>性別 <span class="required">*</span></label>
                 <div class="radio-group">
                     <label><input type="radio" name="gender" value="男の子" required> 男の子</label>
-                    <label><input type="radio" name="gender" value="女の子" required> 女の子</label>
+                    <label><input type="radio" name="gender" value="女の子"> 女の子</label>
                 </div>
             </div>
 
             <div class="form-group">
-                <label>狂犬病予防注射済表 <span class="required">*</span></label>
+                <label for="regular_hospital">かかりつけの動物病院名</label>
+                <input type="text" id="regular_hospital" placeholder="例：〇〇動物病院">
+            </div>
+
+            <div class="form-group">
+                <label for="allergies">アレルギーの有無（ある場合は具体的に）</label>
+                <input type="text" id="allergies" placeholder="例：チキンアレルギーあり、特になし">
+            </div>
+
+            <div class="form-group">
+                <label for="favorite_spots">触られて好きなところ・喜ぶこと</label>
+                <input type="text" id="favorite_spots" placeholder="例：あごの下、おもちゃで遊ぶこと">
+            </div>
+
+            <div class="form-group">
+                <label for="dislike_spots">触られて苦手なところ・嫌がること</label>
+                <input type="text" id="dislike_spots" placeholder="例：前足の爪切り、耳掃除">
+            </div>
+
+            <div class="form-group">
+                <label>狂犬病予防注射済表（直近1年以内）の提示 <span class="required">*</span></label>
                 <div class="radio-group">
-                    <label><input type="radio" name="rabies_vaccine" value="あり" required> あり</label>
-                    <label><input type="radio" name="rabies_vaccine" value="なし" required> なし</label>
+                    <label><input type="radio" name="rabies_vaccine" value="あり" required> 接種済み（本日画像提出）</label>
+                    <label><input type="radio" name="rabies_vaccine" value="当日持参"> 当日、済票現物を持参する</label>
                 </div>
-                <label class="file-label" for="rabies_image" style="margin-top: 8px; display: inline-block;">済票画像の提出</label>
-                <input type="file" id="rabies_image" accept="image/*">
+                <div class="file-input-wrapper">
+                    <p class="file-label">画像の提出（接種済みの場合）</p>
+                    <input type="file" id="rabies_image" accept="image/*">
+                </div>
             </div>
 
             <div class="form-group">
-                <label>混合ワクチン接種証明書 <span class="required">*</span></label>
+                <label>混合ワクチン接種証明書（直近1年以内）の提示 <span class="required">*</span></label>
                 <div class="radio-group">
-                    <label><input type="radio" name="mixed_vaccine" value="あり" required> あり</label>
-                    <label><input type="radio" name="mixed_vaccine" value="なし" required> なし</label>
+                    <label><input type="radio" name="mixed_vaccine" value="あり" required> 接種済み（本日画像提出）</label>
+                    <label><input type="radio" name="mixed_vaccine" value="当日持参"> 当日、証明書現物を持参する</label>
                 </div>
-                <label class="file-label" for="vaccine_image" style="margin-top: 8px; display: inline-block;">証明書画像の提出</label>
-                <input type="file" id="vaccine_image" accept="image/*">
+                <div class="file-input-wrapper">
+                    <p class="file-label">画像の提出（接種済みの場合）</p>
+                    <input type="file" id="vaccine_image" accept="image/*">
+                </div>
             </div>
 
             <div class="form-group">
-                <label for="medical_history">持病 <span class="required">*</span></label>
-                <input type="text" id="medical_history" required placeholder="例：なし、または心臓に持病ありなど">
+                <label for="medical_history">持病・現在治療中の病気や怪我（ある場合は具体的に）</label>
+                <input type="text" id="medical_history" placeholder="例：心臓に持病あり、特になし">
             </div>
 
             <div class="form-group">
-                <label>避妊手術・去勢手術 <span class="required">*</span></label>
+                <label>避妊・去勢手術の有無 <span class="required">*</span></label>
                 <div class="radio-group">
                     <label><input type="radio" name="spay_neuter" value="済み" required> 済み</label>
-                    <label><input type="radio" name="spay_neuter" value="未完" required> 未完</label>
+                    <label><input type="radio" name="spay_neuter" value="未手術"> 未手術</label>
                 </div>
             </div>
 
             <div class="form-group">
-                <label for="flea_tick_prevent">ノミ・ダニの予防</label>
+                <label for="flea_tick_prevent">ノミ・ダニの予防状況（直近の実施月など）</label>
                 <input type="text" id="flea_tick_prevent" placeholder="例：フロントライン 5月実施">
-                <label class="file-label" for="flea_tick_image">画像の提出</label>
-                <input type="file" id="flea_tick_image" accept="image/*">
+                <div class="file-input-wrapper">
+                    <p class="file-label">画像の提出</p>
+                    <input type="file" id="flea_tick_image" accept="image/*">
+                </div>
             </div>
 
             <div class="form-group">
-                <label for="heartworm_prevent">フィラリアの予防</label>
-                <input type="text" id="heartworm_prevent" placeholder="例：カルドメック 5月実施">
-                <label class="file-label" for="heartworm_image">画像の提出</label>
-                <input type="file" id="heartworm_image" accept="image/*">
-            </div>
-
-            <hr>
-            <h2>ご予約日時の選択</h2>
-
-            <div class="form-group">
-                <label for="reservation_date">予約日 <span class="required">*</span></label>
-                <input type="date" id="reservation_date" required>
-            </div>
-
-            <div class="form-group">
-                <label for="reservation_time">予約時間 <span class="required">*</span></label>
-                <select id="reservation_time" required disabled>
-                    <option value="">予約日を先に選択してください</option>
-                </select>
-            </div>
-
-            <button type="submit" id="submit-btn">予約する</button>
-        </form>
-    </main>
-
-    <script src="script.js"></script>
-</body>
-</html>
+                <label for="heartworm_prevent">フィラリアの予防状況（直近の実施月など）
