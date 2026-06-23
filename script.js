@@ -1,8 +1,8 @@
 // ==========================================
-// 1. Supabaseの接続情報 (実際の値に書き換えてください)
+// 1. Supabaseの接続情報 (正しい情報を埋め込み済み)
 // ==========================================
 const SUPABASE_URL = "https://omphuvdamamlseifccfq.supabase.co"; 
-const SUPABASE_KEY = "sb_publishable_nTsYxNVL2N4P3WjSUtSTgw_E1aaCb4d";
+const SUPABASE_KEY = "sb_publishable_nTsYxNVL2N4P3WjSUtSTgw_E1aaCb4d"; 
 
 const supabase = Supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -17,7 +17,6 @@ const TIME_SLOTS = [
 document.addEventListener("DOMContentLoaded", () => {
     const dateInput = document.getElementById("reservation_date");
     const timeSelect = document.getElementById("reservation_time");
-    // 【修正箇所】ハイフン(-)に修正し、HTMLと名前を一致させました
     const form = document.getElementById("reservation-form");
 
     // 当日以降しか選択できないようにカレンダーを制限
