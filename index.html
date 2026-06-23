@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ANELLA CAFE 南浦和店 | ご予約</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="site-header">
+    <h1>ANELLA CAFE 南浦和店</h1>
+    <p class="subtitle">トリミングサロン ご予約フォーム</p>
+  </header>
+
+  <main class="container">
+    <!-- 予約フォーム -->
+    <section class="card">
+      <h2>ご予約フォーム</h2>
+      <form id="reservation-form">
+        <div class="field">
+          <label for="owner-name">飼い主名 <span class="req">*</span></label>
+          <input type="text" id="owner-name" name="ownerName" required autocomplete="name" />
+        </div>
+
+        <div class="field">
+          <label for="dog-name">犬名 <span class="req">*</span></label>
+          <input type="text" id="dog-name" name="dogName" required />
+        </div>
+
+        <div class="field">
+          <label for="breed">犬種 <span class="req">*</span></label>
+          <input type="text" id="breed" name="breed" required placeholder="例：トイプードル" />
+        </div>
+
+        <div class="field">
+          <label for="phone">電話番号 <span class="req">*</span></label>
+          <input type="tel" id="phone" name="phone" required placeholder="例：09012345678" autocomplete="tel" />
+        </div>
+
+        <div class="field">
+          <label for="date">予約日 <span class="req">*</span></label>
+          <input type="date" id="date" name="date" required />
+        </div>
+
+        <div class="field">
+          <label for="time">予約時間 <span class="req">*</span></label>
+          <select id="time" name="time" required>
+            <option value="">予約日を選択してください</option>
+          </select>
+          <p class="hint" id="time-hint"></p>
+        </div>
+
+        <button type="submit" id="submit-btn">予約する</button>
+        <p class="message" id="form-message"></p>
+      </form>
+    </section>
+
+    <!-- 予約一覧 -->
+    <section class="card">
+      <h2>予約一覧</h2>
+      <div class="field">
+        <label for="filter-date">日付で絞り込み</label>
+        <input type="date" id="filter-date" />
+      </div>
+      <div id="reservation-list" class="reservation-list">
+        <p class="empty">読み込み中...</p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p>&copy; ANELLA CAFE 南浦和店</p>
+  </footer>
+
+  <!-- Supabase JS クライアント (CDN) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="script.js"></script>
+</body>
+</html>

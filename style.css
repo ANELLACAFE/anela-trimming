@@ -1,0 +1,212 @@
+:root {
+  --brand: #b07a4b;
+  --brand-dark: #8a5d36;
+  --bg: #faf6f1;
+  --card-bg: #ffffff;
+  --text: #3a312a;
+  --muted: #8c8178;
+  --border: #e4dad0;
+  --danger: #c0392b;
+  --success: #2e7d54;
+  --radius: 12px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Hiragino Sans", "Yu Gothic", "Meiryo", system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+}
+
+/* ヘッダー */
+.site-header {
+  background: var(--brand);
+  color: #fff;
+  text-align: center;
+  padding: 24px 16px;
+}
+
+.site-header h1 {
+  margin: 0;
+  font-size: 1.5rem;
+  letter-spacing: 0.04em;
+}
+
+.site-header .subtitle {
+  margin: 4px 0 0;
+  font-size: 0.9rem;
+  opacity: 0.9;
+}
+
+/* レイアウト */
+.container {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 20px 16px 40px;
+  display: grid;
+  gap: 20px;
+}
+
+.card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+}
+
+.card h2 {
+  margin: 0 0 16px;
+  font-size: 1.15rem;
+  color: var(--brand-dark);
+  border-bottom: 2px solid var(--border);
+  padding-bottom: 8px;
+}
+
+/* フォーム */
+.field {
+  margin-bottom: 16px;
+}
+
+.field label {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.req {
+  color: var(--danger);
+}
+
+input,
+select {
+  width: 100%;
+  padding: 12px;
+  font-size: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--text);
+}
+
+input:focus,
+select:focus {
+  outline: none;
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px rgba(176, 122, 75, 0.15);
+}
+
+select:disabled {
+  background: #f0ece7;
+  color: var(--muted);
+}
+
+.hint {
+  margin: 6px 0 0;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+button {
+  width: 100%;
+  padding: 14px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #fff;
+  background: var(--brand);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+button:hover:not(:disabled) {
+  background: var(--brand-dark);
+}
+
+button:disabled {
+  background: var(--muted);
+  cursor: not-allowed;
+}
+
+.message {
+  margin: 12px 0 0;
+  font-size: 0.9rem;
+  text-align: center;
+  min-height: 1.2em;
+}
+
+.message.error {
+  color: var(--danger);
+}
+
+.message.success {
+  color: var(--success);
+}
+
+/* 予約一覧 */
+.reservation-list {
+  display: grid;
+  gap: 12px;
+}
+
+.reservation-item {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 14px;
+  background: #fffdfb;
+}
+
+.reservation-item .res-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.reservation-item .res-datetime {
+  font-weight: 700;
+  color: var(--brand-dark);
+}
+
+.reservation-item .res-dog {
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.reservation-item .res-detail {
+  font-size: 0.88rem;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+.empty {
+  color: var(--muted);
+  text-align: center;
+  padding: 16px 0;
+}
+
+/* フッター */
+.site-footer {
+  text-align: center;
+  padding: 20px;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+/* スマートフォン対応 */
+@media (max-width: 480px) {
+  .site-header h1 {
+    font-size: 1.25rem;
+  }
+  .card {
+    padding: 16px;
+  }
+}
