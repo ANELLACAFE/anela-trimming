@@ -1,239 +1,152 @@
-/* =========================================================
- * ANELLA CAFE 南浦和店 予約システム
- * =========================================================
- * ▼▼▼ ここを自分の Supabase プロジェクトの値に書き換えてください ▼▼▼
- */
-const SUPABASE_URL = "https://omphuvdamamlseifccfq.supabase.co";
-const SUPABASE_KEY = "sb_publishable_nTsYxNVL2N4P3WjSUtSTgw_E1aaCb4d";
-/* ▲▲▲ 書き換えはここまで ▲▲▲
- *
- * 予約を保存する Supabase テーブル名
- */
-const TABLE_NAME = "reservations";
+// ==========================================
+// 1. Supabaseの接続情報 (実際の値に書き換えてください)
+// ==========================================
+const SUPABASE_URL = "https://YOUR-PROJECT-ref.supabase.co"; 
+const SUPABASE_KEY = "YOUR-ANON-PUBLIC-KEY";
 
-/* 営業時間の予約枠（必要に応じて編集してください） */
+const supabase = Supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ==========================================
+// 2. 予約枠の定義（1日2つの大きな枠）
+// ==========================================
 const TIME_SLOTS = [
-  "10:00", "11:00", "12:00",
-  "13:00", "14:00", "15:00",
-  "16:00", "17:00",
+    "11:00", // 11:00〜14:00の枠を代表する値
+    "15:00"  // 15:00〜18:00の枠を代表する値
 ];
 
-/* =========================================================
- * Supabase クライアント初期化
- * ========================================================= */
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-/* DOM 参照 */
-const form = document.getElementById("reservation-form");
-const dateInput = document.getElementById("date");
-const timeSelect = document.getElementById("time");
-const timeHint = document.getElementById("time-hint");
-const submitBtn = document.getElementById("submit-btn");
-const formMessage = document.getElementById("form-message");
-const listEl = document.getElementById("reservation-list");
-const filterDate = document.getElementById("filter-date");
-
-/* =========================================================
- * 初期化
- * ========================================================= */
 document.addEventListener("DOMContentLoaded", () => {
-  // 過去日を選べないように最小日を今日に設定
-  const today = new Date().toISOString().split("T")[0];
-  dateInput.min = today;
+    const dateInput = document.getElementById("reservation_date");
+    const timeSelect = document.getElementById("reservation_time");
+    const form = document.getElementById("reservation_form");
 
-  loadReservations();
+    // 当日以降しか選択できないようにカレンダーを制限
+    const today = new Date().toISOString().split("T")[0];
+    dateInput.min = today;
+
+    // 日付が選択されたら、予約枠の空き状況をチェック
+    dateInput.addEventListener("change", async () => {
+        const selectedDate = dateInput.value;
+        if (!selectedDate) return;
+
+        timeSelect.disabled = true;
+        timeSelect.innerHTML = '<option value="">読み込み中...</option>';
+
+        try {
+            // Supabaseから選択された日の予約を取得
+            const { data, error } = await supabase
+                .from("reservations")
+                .select("reservation_time")
+                .eq("reservation_date", selectedDate);
+
+            if (error) throw error;
+
+            // すでに予約されている時間を配列にまとめる (hh:mm:ss -> hh:mm形式に変換)
+            const reservedTimes = data.map(r => r.reservation_time.substring(0, 5));
+
+            // セレクトボックスの選択肢を生成
+            timeSelect.innerHTML = '<option value="">枠を選択してください</option>';
+            
+            // 11:00の枠の判定
+            const opt1 = document.createElement("option");
+            opt1.value = "11:00";
+            if (reservedTimes.includes("11:00")) {
+                opt1.textContent = "11:00 〜 14:00 (予約済み)";
+                opt1.disabled = true;
+            } else {
+                opt1.textContent = "11:00 〜 14:00 (空きあり)";
+            }
+            timeSelect.appendChild(opt1);
+
+            // 15:00の枠の判定
+            const opt2 = document.createElement("option");
+            opt2.value = "15:00";
+            if (reservedTimes.includes("15:00")) {
+                opt2.textContent = "15:00 〜 18:00 (予約済み)";
+                opt2.disabled = true;
+            } else {
+                opt2.textContent = "15:00 〜 18:00 (空きあり)";
+            }
+            timeSelect.appendChild(opt2);
+
+            timeSelect.disabled = false;
+
+        } catch (err) {
+            console.error(err);
+            alert("予約枠の取得に失敗しました。時間をおいて再度お試しください。");
+        }
+    });
+
+    // フォーム送信（予約登録）
+    form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        
+        const submitBtn = document.getElementById("submit-btn");
+        submitBtn.disabled = true;
+        submitBtn.textContent = "処理中...";
+
+        // ラジオボタンの値を取得
+        const gender = document.querySelector('input[name="gender"]:checked')?.value;
+        const rabies = document.querySelector('input[name="rabies_vaccine"]:checked')?.value;
+        const mixed = document.querySelector('input[name="mixed_vaccine"]:checked')?.value;
+        const spay = document.querySelector('input[name="spay_neuter"]:checked')?.value;
+
+        // 画像ファイル名（ファイル名のみ保存）
+        const fleaTickFile = document.getElementById("flea_tick_image").files[0]?.name || "未提出";
+        const heartwormFile = document.getElementById("heartworm_image").files[0]?.name || "未提出";
+
+        // 送信データ組み立て
+        const reservationData = {
+            owner_name: document.getElementById("owner_name").value,
+            owner_kana: document.getElementById("owner_kana").value,
+            phone: document.getElementById("phone").value,
+            address: document.getElementById("address").value,
+            emergency_phone: document.getElementById("emergency_phone").value,
+            trigger_text: document.getElementById("trigger_text").value,
+            dog_name: document.getElementById("dog_name").value,
+            breed: document.getElementById("breed").value,
+            dog_birthday: document.getElementById("dog_birthday").value,
+            regular_hospital: document.getElementById("regular_hospital").value,
+            allergies: document.getElementById("allergies").value,
+            favorite_spots: document.getElementById("favorite_spots").value,
+            dislike_spots: document.getElementById("dislike_spots").value,
+            gender: gender,
+            rabies_vaccine: rabies,
+            mixed_vaccine: mixed,
+            medical_history: document.getElementById("medical_history").value,
+            spay_neuter: spay,
+            flea_tick_prevent: document.getElementById("flea_tick_prevent").value || "なし",
+            flea_tick_image: fleaTickFile,
+            heartworm_prevent: document.getElementById("heartworm_prevent").value || "なし",
+            heartworm_image: heartwormFile,
+            reservation_date: dateInput.value,
+            reservation_time: timeSelect.value
+        };
+
+        try {
+            // Supabaseへデータを挿入
+            const { error } = await supabase
+                .from("reservations")
+                .insert([reservationData]);
+
+            if (error) {
+                if (error.code === "23505") {
+                    alert("申し訳ありません。タッチの差でこの枠の予約が埋まってしまいました。別の枠または別の日付を選択してください。");
+                } else {
+                    throw error;
+                }
+            } else {
+                alert("ご予約が完了しました！ご来店をお待ちしております。");
+                form.reset();
+                timeSelect.disabled = true;
+                timeSelect.innerHTML = '<option value="">予約日を選択してください</option>';
+            }
+
+        } catch (err) {
+            console.error(err);
+            alert("予約に失敗しました。入力内容を確認するか、お店に直接お問い合わせください。");
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.textContent = "予約する";
+        }
+    });
 });
-
-/* 予約日が変わったら、その日の空き時間を更新 */
-dateInput.addEventListener("change", refreshTimeSlots);
-
-/* 一覧の絞り込み */
-filterDate.addEventListener("change", loadReservations);
-
-/* =========================================================
- * 予約済み時間を取得して、選択肢を制御する
- * ========================================================= */
-async function refreshTimeSlots() {
-  const date = dateInput.value;
-  timeSelect.innerHTML = "";
-  timeHint.textContent = "";
-
-  if (!date) {
-    timeSelect.innerHTML = '<option value="">予約日を選択してください</option>';
-    return;
-  }
-
-  // 読み込み中表示
-  timeSelect.disabled = true;
-  timeSelect.innerHTML = '<option value="">読み込み中...</option>';
-
-  const { data, error } = await supabase
-    .from(TABLE_NAME)
-    .select("time")
-    .eq("date", date);
-
-  timeSelect.disabled = false;
-
-  if (error) {
-    timeSelect.innerHTML = '<option value="">読み込みに失敗しました</option>';
-    console.error(error);
-    return;
-  }
-
-  const bookedTimes = (data || []).map((r) => r.time.slice(0, 5));
-
-  timeSelect.innerHTML = '<option value="">時間を選択してください</option>';
-  let availableCount = 0;
-
-  TIME_SLOTS.forEach((slot) => {
-    const option = document.createElement("option");
-    option.value = slot;
-    const isBooked = bookedTimes.includes(slot);
-    if (isBooked) {
-      option.textContent = `${slot}（予約済み）`;
-      option.disabled = true;
-    } else {
-      option.textContent = slot;
-      availableCount++;
-    }
-    timeSelect.appendChild(option);
-  });
-
-  timeHint.textContent =
-    availableCount > 0
-      ? `空き枠：${availableCount} 件`
-      : "この日は満員です。別の日をお選びください。";
-}
-
-/* =========================================================
- * 予約登録
- * ========================================================= */
-form.addEventListener("submit", async (e) => {
-  e.preventDefault();
-  setMessage("", "");
-
-  const payload = {
-    owner_name: document.getElementById("owner-name").value.trim(),
-    dog_name: document.getElementById("dog-name").value.trim(),
-    breed: document.getElementById("breed").value.trim(),
-    phone: document.getElementById("phone").value.trim(),
-    date: dateInput.value,
-    time: timeSelect.value,
-  };
-
-  if (!payload.time) {
-    setMessage("予約時間を選択してください。", "error");
-    return;
-  }
-
-  submitBtn.disabled = true;
-  submitBtn.textContent = "登録中...";
-
-  // 二重予約防止：登録直前に再チェック
-  const { data: existing, error: checkError } = await supabase
-    .from(TABLE_NAME)
-    .select("id")
-    .eq("date", payload.date)
-    .eq("time", payload.time);
-
-  if (checkError) {
-    setMessage("通信エラーが発生しました。時間をおいて再度お試しください。", "error");
-    resetSubmitBtn();
-    return;
-  }
-
-  if (existing && existing.length > 0) {
-    setMessage("申し訳ありません。その時間は既に予約されました。別の時間をお選びください。", "error");
-    await refreshTimeSlots();
-    resetSubmitBtn();
-    return;
-  }
-
-  const { error } = await supabase.from(TABLE_NAME).insert([payload]);
-
-  if (error) {
-    setMessage("予約の登録に失敗しました：" + error.message, "error");
-    resetSubmitBtn();
-    return;
-  }
-
-  setMessage("ご予約を承りました。ありがとうございます！", "success");
-  form.reset();
-  timeSelect.innerHTML = '<option value="">予約日を選択してください</option>';
-  timeHint.textContent = "";
-  resetSubmitBtn();
-  loadReservations();
-});
-
-function resetSubmitBtn() {
-  submitBtn.disabled = false;
-  submitBtn.textContent = "予約する";
-}
-
-function setMessage(text, type) {
-  formMessage.textContent = text;
-  formMessage.className = "message" + (type ? " " + type : "");
-}
-
-/* =========================================================
- * 予約一覧の表示
- * ========================================================= */
-async function loadReservations() {
-  listEl.innerHTML = '<p class="empty">読み込み中...</p>';
-
-  let query = supabase
-    .from(TABLE_NAME)
-    .select("*")
-    .order("date", { ascending: true })
-    .order("time", { ascending: true });
-
-  if (filterDate.value) {
-    query = query.eq("date", filterDate.value);
-  }
-
-  const { data, error } = await query;
-
-  if (error) {
-    listEl.innerHTML = '<p class="empty">予約一覧の読み込みに失敗しました。</p>';
-    console.error(error);
-    return;
-  }
-
-  if (!data || data.length === 0) {
-    listEl.innerHTML = '<p class="empty">予約はありません。</p>';
-    return;
-  }
-
-  listEl.innerHTML = "";
-  data.forEach((r) => {
-    const item = document.createElement("div");
-    item.className = "reservation-item";
-    item.innerHTML = `
-      <div class="res-head">
-        <span class="res-datetime">${formatDate(r.date)} ${r.time.slice(0, 5)}</span>
-      </div>
-      <div class="res-dog">${escapeHtml(r.dog_name)}（${escapeHtml(r.breed)}）</div>
-      <div class="res-detail">飼い主：${escapeHtml(r.owner_name)} / TEL：${escapeHtml(r.phone)}</div>
-    `;
-    listEl.appendChild(item);
-  });
-}
-
-/* =========================================================
- * ユーティリティ
- * ========================================================= */
-function formatDate(dateStr) {
-  const d = new Date(dateStr + "T00:00:00");
-  const week = ["日", "月", "火", "水", "木", "金", "土"];
-  return `${d.getMonth() + 1}/${d.getDate()}(${week[d.getDay()]})`;
-}
-
-function escapeHtml(str) {
-  return String(str ?? "").replace(/[&<>"']/g, (c) => ({
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    '"': "&quot;",
-    "'": "&#39;",
-  }[c]));
-}
