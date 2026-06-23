@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>【管理画面】トリミング予約・カルテ管理</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Supabase CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        /* 管理画面用の追加スタイル */
+        .admin-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #bda286; padding-bottom: 10px; margin-bottom: 20px; }
+        .refresh-btn { background-color: #bda286; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        .refresh-btn:hover { background-color: #a38b71; }
+        .reservation-table { width: 100%; border-collapse: collapse; margin-top: 10px; background: white; }
+        .reservation-table th, .reservation-table td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        .reservation-table th { background-color: #f9f6f0; color: #333; font-weight: bold; }
+        .reservation-table tr:hover { background-color: #f5f5f5; }
+        .view-detail-btn { background-color: #4A90E2; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; }
+        .view-detail-btn:hover { background-color: #357ABD; }
+        
+        /* モーダル（詳細ポップアップ）のスタイル */
+        .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); overflow-y: auto; }
+        .modal-content { background-color: white; margin: 5% auto; padding: 25px; border-radius: 8px; width: 85%; max-width: 600px; box-shadow: 0 4px 8px rgba(0,0,0,0.2); position: relative; }
+        .close-btn { position: absolute; right: 20px; top: 15px; font-size: 28px; font-weight: bold; cursor: pointer; color: #aaa; }
+        .close-btn:hover { color: black; }
+        .detail-grid { display: grid; grid-template-columns: 1fr; gap: 10px; margin-top: 15px; }
+        .detail-item { border-bottom: 1px solid #eee; padding-bottom: 6px; }
+        .detail-label { font-weight: bold; color: #666; font-size: 0.9em; }
+        .detail-value { font-size: 1.05em; color: #333; margin-top: 2px; }
+        
+        /* パスワード画面 */
+        #login-container { max-width: 400px; margin: 100px auto; padding: 30px; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); text-align: center; }
+        #login-password { width: 100%; padding: 10px; margin: 15px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        #login-btn { width: 100%; background-color: #bda286; color: white; border: none; padding: 12px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 1em; }
+    </style>
+</head>
+<body>
+
+    <!-- 1. パスワード認証画面 -->
+    <div id="login-section">
+        <div id="login-container">
+            <h2>管理画面ログイン</h2>
+            <p style="font-size: 0.9em; color: #666;">パスワードを入力してください</p>
+            <input type="password" id="login-password" placeholder="パスワードを入力">
+            <button id="login-btn">ログイン</button>
+        </div>
+    </div>
+
+    <!-- 2. 管理画面メインコンテンツ（初期状態は非表示） -->
+    <div id="admin-section" style="display: none;">
+        <main class="container" style="max-width: 950px; margin: 30px auto;">
+            <div class="admin-header">
+                <h1>トリミング予約・顧客カルテ一覧</h1>
+                <button class="refresh-btn" id="refresh-btn">最新の情報に更新</button>
+            </div>
+
+            <div style="overflow-x: auto;">
+                <table class="reservation-table">
+                    <thead>
+                        <tr>
+                            <th>予約日</th>
+                            <th>時間枠</th>
+                            <th>飼い主名</th>
+                            <th>わんちゃん名</th>
+                            <th>犬種</th>
+                            <th>詳細・カルテ</th>
+                        </tr>
+                    </thead>
+                    <tbody id="reservation-list">
+                        <tr>
+                            <td colspan="6" style="text-align: center; color: #888;">データを読み込み中...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <!-- 3. 詳細モーダル（ポップアップ） -->
+    <div id="detail-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" id="modal-close">&times;</span>
+            <h2 style="border-bottom: 2px solid #bda286; padding-bottom: 8px; margin-bottom: 15px;">顧客カルテ詳細</h2>
+            
+            <div class="detail-grid" id="modal-detail-content">
+                <!-- ここにプログラムで詳細データを流し込みます -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // 1. Supabaseの接続情報（海老原さんの情報を反映済み）
+        // ==========================================
+        const SUPABASE_URL = "https://omphuvdamamlseifccfq.supabase.co"; 
+        const SUPABASE_KEY = "sb_publishable_nTsYxNVL2N4P3WjSUtSTgw_E1aaC"; // ※実際にはここにコピーした長いanon keyを入れてください
+
+        const supabase = Supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        // ==========================================
+        // 2. 簡易パスワード設定 (必要に応じて自由に変更してください)
+        // ==========================================
+        const ADMIN_PASSWORD = "anela"; 
+
+        // ログイン処理
+        document.getElementById("login-btn").addEventListener("click", performLogin);
+        document.getElementById("login-password").addEventListener("keypress", (e) => {
+            if (e.key === "Enter") performLogin();
+        });
+
+        function performLogin() {
+            const inputPass = document.getElementById("login-password").value;
+            if (inputPass === ADMIN_PASSWORD) {
+                document.getElementById("login-section").style.display = "none";
+                document.getElementById("admin-section").style.display = "block";
+                loadReservations(); // 予約データの読み込み
+            } else {
+                alert("パスワードが正しくありません。");
+            }
+        }
+
+        // ==========================================
+        // 3. 予約データ取得・表示処理
+        // ==========================================
+        let allReservations = []; // 取得データを一時保存する配列
+
+        async function loadReservations() {
+            const tbody = document.getElementById("reservation-list");
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #888;">データを読み込み中...</td></tr>';
+
+            try {
+                // 予約日、予約時間の順に並び替えて取得
+                const { data, error } = await supabase
+                    .from("reservations")
+                    .select("*")
+                    .order("reservation_date", { ascending: false })
+                    .order("reservation_time", { ascending: true });
+
+                if (error) throw error;
+                allReservations = data;
+
+                if (data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #888;">現在、予約データはありません。</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = "";
+                data.forEach((res, index) => {
+                    const tr = document.createElement("tr");
+                    
+                    // 時間枠の表示を綺麗にする
+                    const displayTime = res.reservation_time.substring(0, 5) === "11:00" ? "11:00〜14:00" : "15:00〜18:00";
+
+                    tr.innerHTML = `
+                        <td><strong>${res.reservation_date}</strong></td>
+                        <td>${displayTime}</td>
+                        <td>${res.owner_name}</td>
+                        <td><strong>${res.dog_name}</strong></td>
+                        <td>${res.breed}</td>
+                        <td><button class="view-detail-btn" onclick="showDetail(${index})">カルテ表示</button></td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+
+            } catch (err) {
+                console.error(err);
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: red;">データの取得に失敗しました。</td></tr>';
+            }
+        }
+
+        // 更新ボタン
+        document.getElementById("refresh-btn").addEventListener("click", loadReservations);
+
+        // ==========================================
+        // 4. カルテ詳細ポップアップ表示
+        // ==========================================
+        const modal = document.getElementById("detail-modal");
+        
+        window.showDetail = function(index) {
+            const res = allReservations[index];
+            const content = document.getElementById("modal-detail-content");
+            
+            // 各項目のマッピング定義
+            const items = [
+                { label: "予約日", value: res.reservation_date },
+                { label: "予約時間枠", value: res.reservation_time.substring(0, 5) === "11:00" ? "11:00〜14:00" : "15:00〜18:00" },
+                { label: "飼い主氏名", value: res.owner_name },
+                { label: "フリガナ", value: res.owner_kana },
+                { label: "電話番号", value: res.phone },
+                { label: "住所", value: res.address },
+                { label: "緊急連絡先", value: res.emergency_phone },
+                { label: "ご来店のきっかけ", value: res.trigger_text },
+                { label: "わんちゃん名", value: res.dog_name },
+                { label: "犬種", value: res.breed },
+                { label: "生年月日・年齢", value: res.dog_birthday },
+                { label: "かかりつけ動物病院", value: res.regular_hospital },
+                { label: "アレルギー情報", value: res.allergies },
+                { label: "好きなところ", value: res.favorite_spots },
+                { label: "苦手なところ", value: res.dislike_spots },
+                { label: "性別", value: res.gender },
+                { label: "狂犬病予防注射済表", value: res.rabies_vaccine },
+                { label: "済票画像名", value: res.rabies_image || "未提出" },
+                { label: "混合ワクチン接種証明書", value: res.mixed_vaccine },
+                { label: "ワクチン画像名", value: res.mixed_vaccine_image || "未提出" },
+                { label: "持病情報", value: res.medical_history },
+                { label: "避妊・去勢手術", value: res.spay_neuter },
+                { label: "ノミ・ダニ予防", value: res.flea_tick_prevent + ` (${res.flea_tick_image || '画像なし'})` },
+                { label: "フィラリア予防", value: res.heartworm_prevent + ` (${res.heartworm_image || '画像なし'})` }
+            ];
+
+            content.innerHTML = items.map(item => `
+                <div class="detail-item">
+                    <div class="detail-label">${item.label}</div>
+                    <div class="detail-value">${item.value || "未入力"}</div>
+                </div>
+            `).join("");
+
+            modal.style.display = "block";
+        };
+
+        // モーダルを閉じる処理
+        document.getElementById("modal-close").addEventListener("click", () => {
+            modal.style.display = "none";
+        });
+        window.addEventListener("click", (e) => {
+            if (e.target === modal) modal.style.display = "none";
+        });
+    </script>
+</body>
+</html>
