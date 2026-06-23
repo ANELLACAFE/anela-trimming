@@ -91,26 +91,24 @@
 
     <script>
         // ==========================================
-        // 1. Supabaseの接続情報（海老原さんの情報を反映済み）
+        // 1. Supabaseの接続情報（正しいキーを埋め込み済み）
         // ==========================================
         const SUPABASE_URL = "https://omphuvdamamlseifccfq.supabase.co"; 
-        const SUPABASE_KEY = "sb_publishable_nTsYxNVL2N4P3WjSUtSTgw_E1aaC"; // ※実際にはここにコピーした長いanon keyを入れてください
+        const SUPABASE_KEY = "sb_publishable_nTsYxNVL2N4P3WjSUtSTgw_E1aaCb4d"; 
 
         const supabase = Supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         // ==========================================
-        // 2. 簡易パスワード設定 (必要に応じて自由に変更してください)
+        // 2. 簡易パスワード設定 (初期設定：anela)
         // ==========================================
         const ADMIN_PASSWORD = "anela"; 
 
         // ログイン処理
-        document.getElementById("login-btn").addEventListener("click", performLogin);
-        document.getElementById("login-password").addEventListener("keypress", (e) => {
-            if (e.key === "Enter") performLogin();
-        });
+        const loginBtn = document.getElementById("login-btn");
+        const passwordInput = document.getElementById("login-password");
 
-        function performLogin() {
-            const inputPass = document.getElementById("login-password").value;
+        function handleLogin() {
+            const inputPass = passwordInput.value;
             if (inputPass === ADMIN_PASSWORD) {
                 document.getElementById("login-section").style.display = "none";
                 document.getElementById("admin-section").style.display = "block";
@@ -120,17 +118,23 @@
             }
         }
 
+        loginBtn.addEventListener("click", handleLogin);
+        passwordInput.addEventListener("keypress", (e) => {
+            if (e.key === "Enter") {
+                handleLogin();
+            }
+        });
+
         // ==========================================
         // 3. 予約データ取得・表示処理
         // ==========================================
-        let allReservations = []; // 取得データを一時保存する配列
+        let allReservations = []; 
 
         async function loadReservations() {
             const tbody = document.getElementById("reservation-list");
             tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #888;">データを読み込み中...</td></tr>';
 
             try {
-                // 予約日、予約時間の順に並び替えて取得
                 const { data, error } = await supabase
                     .from("reservations")
                     .select("*")
@@ -148,8 +152,6 @@
                 tbody.innerHTML = "";
                 data.forEach((res, index) => {
                     const tr = document.createElement("tr");
-                    
-                    // 時間枠の表示を綺麗にする
                     const displayTime = res.reservation_time.substring(0, 5) === "11:00" ? "11:00〜14:00" : "15:00〜18:00";
 
                     tr.innerHTML = `
@@ -169,7 +171,6 @@
             }
         }
 
-        // 更新ボタン
         document.getElementById("refresh-btn").addEventListener("click", loadReservations);
 
         // ==========================================
@@ -181,7 +182,6 @@
             const res = allReservations[index];
             const content = document.getElementById("modal-detail-content");
             
-            // 各項目のマッピング定義
             const items = [
                 { label: "予約日", value: res.reservation_date },
                 { label: "予約時間枠", value: res.reservation_time.substring(0, 5) === "11:00" ? "11:00〜14:00" : "15:00〜18:00" },
@@ -219,7 +219,6 @@
             modal.style.display = "block";
         };
 
-        // モーダルを閉じる処理
         document.getElementById("modal-close").addEventListener("click", () => {
             modal.style.display = "none";
         });
