@@ -36,49 +36,116 @@
     <div class="admin-layout">
 
         <div class="admin-topbar">
-            <h1>予約一覧</h1>
-            <button class="btn btn-primary" id="refresh-btn">🔄 最新情報に更新</button>
+            <h1>管理画面</h1>
+            <button class="btn btn-primary" id="refresh-btn">🔄 更新</button>
         </div>
 
-        <!-- ── フィルターバー ── -->
-        <div class="admin-toolbar">
-            <label for="filter-date">日付で絞り込み</label>
-            <input type="date" id="filter-date">
-            <button class="btn btn-ghost btn-sm" id="filter-today-btn">📅 今日</button>
-            <button class="btn btn-ghost btn-sm" id="filter-clear-btn">✕ 絞り込み解除</button>
-            <div class="toolbar-divider"></div>
-            <label for="filter-keyword">名前・犬種で検索</label>
-            <input type="text" id="filter-keyword" placeholder="例：うに、プードル" style="min-width:160px">
+        <!-- ── タブ ── -->
+        <div class="tab-bar">
+            <button class="tab-btn active" data-tab="reservations">📋 予約一覧</button>
+            <button class="tab-btn" data-tab="schedule">📅 営業日設定</button>
         </div>
 
-        <!-- ── 予約テーブル ── -->
-        <div class="table-wrap">
-            <table class="reservation-table">
-                <thead>
-                    <tr>
-                        <th>予約日</th>
-                        <th>時間枠</th>
-                        <th>飼い主名</th>
-                        <th>わんちゃん名</th>
-                        <th>犬種</th>
-                        <th>カルテ</th>
-                        <th>削除</th>
-                    </tr>
-                </thead>
-                <tbody id="reservation-list">
-                    <tr><td colspan="7" class="empty-state"><span class="empty-icon">🐾</span>読み込み中...</td></tr>
-                </tbody>
-            </table>
+        <!-- ══ タブ①：予約一覧 ══ -->
+        <div class="tab-panel active" id="tab-reservations">
+
+            <div class="admin-toolbar">
+                <label for="filter-date">日付で絞り込み</label>
+                <input type="date" id="filter-date">
+                <button class="btn btn-ghost btn-sm" id="filter-today-btn">📅 今日</button>
+                <button class="btn btn-ghost btn-sm" id="filter-clear-btn">✕ 解除</button>
+                <div class="toolbar-divider"></div>
+                <label for="filter-keyword">名前・犬種で検索</label>
+                <input type="text" id="filter-keyword" placeholder="例：うに、プードル" style="min-width:160px">
+            </div>
+
+            <div class="table-wrap">
+                <table class="reservation-table">
+                    <thead>
+                        <tr>
+                            <th>予約日</th>
+                            <th>時間枠</th>
+                            <th>飼い主名</th>
+                            <th>わんちゃん名</th>
+                            <th>犬種</th>
+                            <th>カルテ</th>
+                            <th>削除</th>
+                        </tr>
+                    </thead>
+                    <tbody id="reservation-list">
+                        <tr><td colspan="7" class="empty-state"><span class="empty-icon">🐾</span>読み込み中...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <p id="result-count" style="text-align:right;font-size:0.82rem;color:#aaa;margin-top:10px;"></p>
         </div>
 
-        <p id="result-count" style="text-align:right; font-size:0.82rem; color:#aaa; margin-top:10px;"></p>
+        <!-- ══ タブ②：営業日設定 ══ -->
+        <div class="tab-panel" id="tab-schedule">
 
+            <!-- 定休日（曜日） -->
+            <div class="schedule-card">
+                <h3>🗓 定休日の設定（曜日）</h3>
+                <p style="font-size:0.88rem;color:#999;margin-bottom:16px;">休みにする曜日を選んでください。赤くなった曜日が定休日として予約不可になります。</p>
+                <div class="weekday-grid">
+                    <div class="weekday-toggle">
+                        <input type="checkbox" id="wd-0" value="0">
+                        <label for="wd-0">日<span class="day-en">Sun</span></label>
+                    </div>
+                    <div class="weekday-toggle">
+                        <input type="checkbox" id="wd-1" value="1">
+                        <label for="wd-1">月<span class="day-en">Mon</span></label>
+                    </div>
+                    <div class="weekday-toggle">
+                        <input type="checkbox" id="wd-2" value="2">
+                        <label for="wd-2">火<span class="day-en">Tue</span></label>
+                    </div>
+                    <div class="weekday-toggle">
+                        <input type="checkbox" id="wd-3" value="3">
+                        <label for="wd-3">水<span class="day-en">Wed</span></label>
+                    </div>
+                    <div class="weekday-toggle">
+                        <input type="checkbox" id="wd-4" value="4">
+                        <label for="wd-4">木<span class="day-en">Thu</span></label>
+                    </div>
+                    <div class="weekday-toggle">
+                        <input type="checkbox" id="wd-5" value="5">
+                        <label for="wd-5">金<span class="day-en">Fri</span></label>
+                    </div>
+                    <div class="weekday-toggle">
+                        <input type="checkbox" id="wd-6" value="6">
+                        <label for="wd-6">土<span class="day-en">Sat</span></label>
+                    </div>
+                </div>
+                <button class="schedule-save-btn" id="save-weekdays-btn">💾 曜日設定を保存</button>
+            </div>
+
+            <!-- 臨時休業日 -->
+            <div class="schedule-card">
+                <h3>🚫 臨時休業日の追加</h3>
+                <p style="font-size:0.88rem;color:#999;margin-bottom:16px;">祝日・急な休業など、特定の日を予約不可にできます。</p>
+                <div class="closed-date-form">
+                    <div>
+                        <label style="font-size:0.82rem;font-weight:700;color:var(--color-mid);display:block;margin-bottom:5px;">日付</label>
+                        <input type="date" id="new-closed-date">
+                    </div>
+                    <div style="flex:1">
+                        <label style="font-size:0.82rem;font-weight:700;color:var(--color-mid);display:block;margin-bottom:5px;">メモ（任意）</label>
+                        <input type="text" id="new-closed-note" placeholder="例：夏季休業、研修のため">
+                    </div>
+                    <button class="schedule-save-btn" id="add-closed-date-btn">＋ 追加</button>
+                </div>
+
+                <ul class="closed-date-list" id="closed-date-list">
+                    <li class="empty-list">臨時休業日はまだ登録されていません。</li>
+                </ul>
+            </div>
+
+        </div>
     </div>
 </div>
 
-<!-- ══════════════════════════════════
-     カルテ詳細モーダル
-══════════════════════════════════ -->
+<!-- ══ カルテ詳細モーダル ══ -->
 <div id="detail-modal" class="modal" role="dialog" aria-modal="true">
     <div class="modal-content">
         <div class="modal-header">
@@ -89,12 +156,10 @@
     </div>
 </div>
 
-<!-- ══════════════════════════════════
-     削除確認ダイアログ
-══════════════════════════════════ -->
+<!-- ══ 削除確認ダイアログ ══ -->
 <div id="confirm-dialog" class="confirm-dialog" role="alertdialog" aria-modal="true">
     <div class="confirm-box">
-        <p id="confirm-message">この予約を削除しますか？</p>
+        <p id="confirm-message"></p>
         <div class="confirm-actions">
             <button class="btn btn-ghost" id="confirm-cancel-btn">キャンセル</button>
             <button class="btn btn-danger" id="confirm-ok-btn">削除する</button>
@@ -102,14 +167,13 @@
     </div>
 </div>
 
-<!-- トースト通知 -->
 <div id="toast"></div>
 
 <script>
-// ── Supabase 初期化 ──
-const SUPABASE_URL  = "https://omphuvdamamlseifccfq.supabase.co";
-const SUPABASE_KEY  = "sb_publishable_nTsYxNVL2N4P3WjSUtSTgw_E1aaCb4d";
-const _supabase     = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+// ── 初期化 ──
+const SUPABASE_URL   = "https://omphuvdamamlseifccfq.supabase.co";
+const SUPABASE_KEY   = "sb_publishable_nTsYxNVL2N4P3WjSUtSTgw_E1aaCb4d";
+const _supabase      = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const ADMIN_PASSWORD = "anela";
 
 // ── ユーティリティ ──
@@ -120,56 +184,60 @@ function showToast(message, type = "success") {
     clearTimeout(toast._timer);
     toast._timer = setTimeout(() => { toast.className = ""; }, 3500);
 }
-
 function formatTime(timeStr) {
     const hh = (timeStr || "").substring(0, 5);
     if (hh === "11:00") return { label: "11:00〜14:00", cls: "am" };
     if (hh === "15:00") return { label: "15:00〜18:00", cls: "pm" };
     return { label: hh, cls: "" };
 }
-
 function val(v) {
-    return (v && v.trim()) ? v : '<span class="detail-value empty">未入力</span>';
+    return (v && String(v).trim()) ? v : '<span class="detail-value empty">未入力</span>';
 }
 
 // ── ログイン ──
 function handleLogin() {
     const pw = document.getElementById("login-password").value;
-    const errEl = document.getElementById("login-error");
     if (pw === ADMIN_PASSWORD) {
         document.getElementById("login-section").style.display = "none";
         document.getElementById("admin-section").style.display = "block";
         loadReservations();
+        loadScheduleSettings();
     } else {
-        errEl.classList.add("visible");
+        document.getElementById("login-error").classList.add("visible");
         document.getElementById("login-password").classList.add("is-invalid");
     }
 }
 document.getElementById("login-btn").addEventListener("click", handleLogin);
-document.getElementById("login-password").addEventListener("keypress", e => {
-    if (e.key === "Enter") handleLogin();
+document.getElementById("login-password").addEventListener("keypress", e => { if (e.key === "Enter") handleLogin(); });
+
+// ── タブ切り替え ──
+document.querySelectorAll(".tab-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+        document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+        document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
+        btn.classList.add("active");
+        document.getElementById("tab-" + btn.dataset.tab).classList.add("active");
+    });
 });
 
-// ── データ管理 ──
+// ══════════════════════════════════
+// 予約一覧
+// ══════════════════════════════════
 let allReservations = [];
 
 async function loadReservations() {
     const tbody = document.getElementById("reservation-list");
     tbody.innerHTML = `<tr><td colspan="7" class="empty-state"><span class="empty-icon">🐾</span>読み込み中...</td></tr>`;
-
     try {
         const { data, error } = await _supabase
-            .from("reservations")
-            .select("*")
+            .from("reservations").select("*")
             .order("reservation_date", { ascending: false })
             .order("reservation_time", { ascending: true });
-
         if (error) throw error;
         allReservations = data;
         renderTable();
     } catch (err) {
         console.error(err);
-        tbody.innerHTML = `<tr><td colspan="7" class="empty-state"><span class="empty-icon">⚠️</span>データの取得に失敗しました。</td></tr>`;
         showToast("データの取得に失敗しました。", "error");
     }
 }
@@ -181,17 +249,12 @@ function renderTable() {
     const countEl    = document.getElementById("result-count");
 
     let filtered = allReservations;
-
-    if (filterDate) {
-        filtered = filtered.filter(r => r.reservation_date === filterDate);
-    }
-    if (filterKw) {
-        filtered = filtered.filter(r =>
-            (r.owner_name || "").toLowerCase().includes(filterKw) ||
-            (r.dog_name   || "").toLowerCase().includes(filterKw) ||
-            (r.breed      || "").toLowerCase().includes(filterKw)
-        );
-    }
+    if (filterDate) filtered = filtered.filter(r => r.reservation_date === filterDate);
+    if (filterKw)   filtered = filtered.filter(r =>
+        (r.owner_name || "").toLowerCase().includes(filterKw) ||
+        (r.dog_name   || "").toLowerCase().includes(filterKw) ||
+        (r.breed      || "").toLowerCase().includes(filterKw)
+    );
 
     countEl.textContent = filtered.length > 0 ? `${filtered.length} 件を表示中` : "";
 
@@ -199,11 +262,10 @@ function renderTable() {
         tbody.innerHTML = `<tr><td colspan="7" class="empty-state"><span class="empty-icon">🔍</span>該当する予約がありません。</td></tr>`;
         return;
     }
-
     tbody.innerHTML = "";
     filtered.forEach(res => {
         const { label, cls } = formatTime(res.reservation_time);
-        const originalIndex = allReservations.indexOf(res);
+        const idx = allReservations.indexOf(res);
         const tr = document.createElement("tr");
         tr.innerHTML = `
             <td><strong>${res.reservation_date}</strong></td>
@@ -211,26 +273,16 @@ function renderTable() {
             <td>${res.owner_name || "—"}</td>
             <td><strong>${res.dog_name || "—"}</strong></td>
             <td>${res.breed || "—"}</td>
-            <td>
-                <button class="btn btn-info btn-sm" onclick="showDetail(${originalIndex})">
-                    📋 カルテ表示
-                </button>
-            </td>
-            <td>
-                <button class="btn btn-danger btn-sm" onclick="confirmDelete(${originalIndex})">
-                    🗑 削除
-                </button>
-            </td>
+            <td><button class="btn btn-info btn-sm" onclick="showDetail(${idx})">📋 カルテ表示</button></td>
+            <td><button class="btn btn-danger btn-sm" onclick="confirmDelete(${idx})">🗑 削除</button></td>
         `;
         tbody.appendChild(tr);
     });
 }
 
-// ── フィルター操作 ──
 document.getElementById("filter-date").addEventListener("change", renderTable);
 document.getElementById("filter-keyword").addEventListener("input", renderTable);
-document.getElementById("refresh-btn").addEventListener("click", loadReservations);
-
+document.getElementById("refresh-btn").addEventListener("click", () => { loadReservations(); loadScheduleSettings(); });
 document.getElementById("filter-today-btn").addEventListener("click", () => {
     document.getElementById("filter-date").value = new Date().toISOString().split("T")[0];
     renderTable();
@@ -241,63 +293,56 @@ document.getElementById("filter-clear-btn").addEventListener("click", () => {
     renderTable();
 });
 
-// ── カルテ詳細モーダル ──
+// カルテ詳細
 window.showDetail = function(index) {
     const res = allReservations[index];
     const { label } = formatTime(res.reservation_time);
-    const content = document.getElementById("modal-detail-content");
-
     const items = [
-        { label: "予約日",        value: res.reservation_date, full: false },
-        { label: "予約時間枠",    value: label, full: false },
-        { label: "飼い主氏名",    value: res.owner_name, full: false },
-        { label: "フリガナ",      value: res.owner_kana, full: false },
-        { label: "電話番号",      value: res.phone, full: false },
-        { label: "緊急連絡先",    value: res.emergency_phone, full: false },
-        { label: "住所",          value: res.address, full: true },
+        { label: "予約日",          value: res.reservation_date, full: false },
+        { label: "予約時間枠",      value: label, full: false },
+        { label: "飼い主氏名",      value: res.owner_name, full: false },
+        { label: "フリガナ",        value: res.owner_kana, full: false },
+        { label: "電話番号",        value: res.phone, full: false },
+        { label: "緊急連絡先",      value: res.emergency_phone, full: false },
+        { label: "住所",            value: res.address, full: true },
         { label: "当店を知ったきっかけ", value: res.trigger_text, full: true },
-        { label: "わんちゃん名",  value: res.dog_name, full: false },
-        { label: "犬種",          value: res.breed, full: false },
-        { label: "生年月日・年齢",value: res.dog_birthday, full: false },
-        { label: "性別",          value: res.gender, full: false },
-        { label: "かかりつけ病院",value: res.regular_hospital, full: false },
-        { label: "避妊・去勢手術",value: res.spay_neuter, full: false },
-        { label: "アレルギー",    value: res.allergies, full: true },
-        { label: "好きなところ",  value: res.favorite_spots, full: true },
-        { label: "苦手なところ",  value: res.dislike_spots, full: true },
-        { label: "持病・治療中",  value: res.medical_history, full: true },
-        { label: "狂犬病予防注射済票", value: res.rabies_vaccine, full: false },
-        { label: "済票画像ファイル",   value: res.rabies_image, full: false },
-        { label: "混合ワクチン",       value: res.mixed_vaccine, full: false },
-        { label: "証明書画像ファイル", value: res.mixed_vaccine_image, full: false },
-        { label: "ノミ・ダニ予防",     value: res.flea_tick_prevent, full: false },
-        { label: "ノミ・ダニ画像",     value: res.flea_tick_image, full: false },
-        { label: "フィラリア予防",     value: res.heartworm_prevent, full: false },
-        { label: "フィラリア画像",     value: res.heartworm_image, full: false },
+        { label: "わんちゃん名",    value: res.dog_name, full: false },
+        { label: "犬種",            value: res.breed, full: false },
+        { label: "生年月日・年齢",  value: res.dog_birthday, full: false },
+        { label: "性別",            value: res.gender, full: false },
+        { label: "かかりつけ病院",  value: res.regular_hospital, full: false },
+        { label: "避妊・去勢手術",  value: res.spay_neuter, full: false },
+        { label: "アレルギー",      value: res.allergies, full: true },
+        { label: "好きなところ",    value: res.favorite_spots, full: true },
+        { label: "苦手なところ",    value: res.dislike_spots, full: true },
+        { label: "持病・治療中",    value: res.medical_history, full: true },
+        { label: "狂犬病予防注射済票",   value: res.rabies_vaccine, full: false },
+        { label: "済票画像",             value: res.rabies_image, full: false },
+        { label: "混合ワクチン",         value: res.mixed_vaccine, full: false },
+        { label: "証明書画像",           value: res.mixed_vaccine_image, full: false },
+        { label: "ノミ・ダニ予防",       value: res.flea_tick_prevent, full: false },
+        { label: "ノミ・ダニ画像",       value: res.flea_tick_image, full: false },
+        { label: "フィラリア予防",       value: res.heartworm_prevent, full: false },
+        { label: "フィラリア画像",       value: res.heartworm_image, full: false },
     ];
-
-    content.innerHTML = items.map(item => `
+    document.getElementById("modal-detail-content").innerHTML = items.map(item => `
         <div class="detail-item${item.full ? " full-width" : ""}">
             <div class="detail-label">${item.label}</div>
             <div class="detail-value">${val(item.value)}</div>
         </div>
     `).join("");
-
     document.getElementById("detail-modal").classList.add("open");
 };
-
 document.getElementById("modal-close").addEventListener("click", () => {
     document.getElementById("detail-modal").classList.remove("open");
 });
 document.getElementById("detail-modal").addEventListener("click", e => {
-    if (e.target === document.getElementById("detail-modal")) {
+    if (e.target === document.getElementById("detail-modal"))
         document.getElementById("detail-modal").classList.remove("open");
-    }
 });
 
-// ── 削除 ──
+// 削除
 let pendingDeleteIndex = null;
-
 window.confirmDelete = function(index) {
     const res = allReservations[index];
     pendingDeleteIndex = index;
@@ -305,25 +350,18 @@ window.confirmDelete = function(index) {
         `<span class="confirm-name">${res.dog_name}（${res.owner_name}様）</span><br>${res.reservation_date} の予約を削除しますか？<br><small style="color:#e74c3c">この操作は元に戻せません。</small>`;
     document.getElementById("confirm-dialog").classList.add("open");
 };
-
 document.getElementById("confirm-cancel-btn").addEventListener("click", () => {
     pendingDeleteIndex = null;
     document.getElementById("confirm-dialog").classList.remove("open");
 });
-
 document.getElementById("confirm-ok-btn").addEventListener("click", async () => {
     if (pendingDeleteIndex === null) return;
     const res = allReservations[pendingDeleteIndex];
     document.getElementById("confirm-dialog").classList.remove("open");
-
     try {
-        const { error } = await _supabase
-            .from("reservations")
-            .delete()
-            .eq("id", res.id);
-
+        const { error } = await _supabase.from("reservations").delete().eq("id", res.id);
         if (error) throw error;
-        showToast(`${res.dog_name}（${res.owner_name}様）の予約を削除しました。`, "success");
+        showToast(`${res.dog_name}（${res.owner_name}様）の予約を削除しました。`);
         allReservations.splice(pendingDeleteIndex, 1);
         pendingDeleteIndex = null;
         renderTable();
@@ -334,7 +372,135 @@ document.getElementById("confirm-ok-btn").addEventListener("click", async () => 
     }
 });
 
-// ESCキーでモーダル・ダイアログを閉じる
+// ══════════════════════════════════
+// 営業日設定
+// ══════════════════════════════════
+let closedDateRecords = []; // { id, value, note } のリスト
+
+async function loadScheduleSettings() {
+    try {
+        const { data, error } = await _supabase
+            .from("schedule_settings")
+            .select("*")
+            .order("created_at", { ascending: true });
+        if (error) throw error;
+
+        // 曜日チェックボックスを復元
+        document.querySelectorAll(".weekday-toggle input[type='checkbox']").forEach(cb => {
+            cb.checked = false;
+        });
+        closedDateRecords = [];
+
+        data.forEach(row => {
+            if (row.type === "closed_weekday") {
+                const cb = document.getElementById("wd-" + row.value);
+                if (cb) cb.checked = true;
+            } else if (row.type === "closed_date") {
+                closedDateRecords.push({ id: row.id, value: row.value, note: row.note });
+            }
+        });
+        renderClosedDateList();
+    } catch (err) {
+        console.error(err);
+        showToast("スケジュール設定の読み込みに失敗しました。", "error");
+    }
+}
+
+// 曜日設定を保存（全削除→再挿入）
+document.getElementById("save-weekdays-btn").addEventListener("click", async () => {
+    const btn = document.getElementById("save-weekdays-btn");
+    btn.textContent = "保存中...";
+    btn.disabled = true;
+    try {
+        // 既存の closed_weekday を全削除
+        const { error: delErr } = await _supabase
+            .from("schedule_settings")
+            .delete()
+            .eq("type", "closed_weekday");
+        if (delErr) throw delErr;
+
+        // チェックされている曜日を挿入
+        const checked = [...document.querySelectorAll(".weekday-toggle input:checked")];
+        if (checked.length > 0) {
+            const inserts = checked.map(cb => ({ type: "closed_weekday", value: cb.value, note: "" }));
+            const { error: insErr } = await _supabase.from("schedule_settings").insert(inserts);
+            if (insErr) throw insErr;
+        }
+        showToast("定休日の設定を保存しました。");
+    } catch (err) {
+        console.error(err);
+        showToast("保存に失敗しました。", "error");
+    } finally {
+        btn.textContent = "💾 曜日設定を保存";
+        btn.disabled = false;
+    }
+});
+
+// 臨時休業日を追加
+document.getElementById("add-closed-date-btn").addEventListener("click", async () => {
+    const dateVal = document.getElementById("new-closed-date").value;
+    const noteVal = document.getElementById("new-closed-note").value.trim();
+    if (!dateVal) {
+        showToast("日付を選択してください。", "error");
+        return;
+    }
+    // 重複チェック
+    if (closedDateRecords.some(r => r.value === dateVal)) {
+        showToast("この日付はすでに登録されています。", "error");
+        return;
+    }
+    try {
+        const { data, error } = await _supabase
+            .from("schedule_settings")
+            .insert([{ type: "closed_date", value: dateVal, note: noteVal }])
+            .select();
+        if (error) throw error;
+        closedDateRecords.push({ id: data[0].id, value: dateVal, note: noteVal });
+        renderClosedDateList();
+        document.getElementById("new-closed-date").value = "";
+        document.getElementById("new-closed-note").value = "";
+        showToast(`${dateVal} を臨時休業日に追加しました。`);
+    } catch (err) {
+        console.error(err);
+        showToast("追加に失敗しました。", "error");
+    }
+});
+
+// 臨時休業日リストを描画
+function renderClosedDateList() {
+    const ul = document.getElementById("closed-date-list");
+    if (closedDateRecords.length === 0) {
+        ul.innerHTML = '<li class="empty-list">臨時休業日はまだ登録されていません。</li>';
+        return;
+    }
+    // 日付昇順でソート
+    const sorted = [...closedDateRecords].sort((a, b) => a.value.localeCompare(b.value));
+    ul.innerHTML = sorted.map(r => `
+        <li class="closed-date-item">
+            <div class="date-info">
+                <strong>${r.value}</strong>
+                ${r.note ? `<div class="date-note">${r.note}</div>` : ""}
+            </div>
+            <button class="remove-btn" onclick="removeClosedDate(${r.id})" title="削除">×</button>
+        </li>
+    `).join("");
+}
+
+// 臨時休業日を削除
+window.removeClosedDate = async function(id) {
+    try {
+        const { error } = await _supabase.from("schedule_settings").delete().eq("id", id);
+        if (error) throw error;
+        closedDateRecords = closedDateRecords.filter(r => r.id !== id);
+        renderClosedDateList();
+        showToast("臨時休業日を削除しました。");
+    } catch (err) {
+        console.error(err);
+        showToast("削除に失敗しました。", "error");
+    }
+};
+
+// ESCキー
 document.addEventListener("keydown", e => {
     if (e.key === "Escape") {
         document.getElementById("detail-modal").classList.remove("open");
