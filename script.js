@@ -1,8 +1,8 @@
 // ==========================================
 // 1. Supabaseの接続情報 (実際の値に書き換えてください)
 // ==========================================
-const SUPABASE_URL = "https://YOUR-PROJECT-ref.supabase.co"; 
-const SUPABASE_KEY = "YOUR-ANON-PUBLIC-KEY";
+const SUPABASE_URL = "https://omphuvdamamlseifccfq.supabase.co"; 
+const SUPABASE_KEY = "sb_publishable_nTsYxNVL2N4P3WjSUtSTgw_E1aaCb4d";
 
 const supabase = Supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -10,14 +10,15 @@ const supabase = Supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 // 2. 予約枠の定義（1日2つの大きな枠）
 // ==========================================
 const TIME_SLOTS = [
-    "11:00", // 11:00〜14:00の枠を代表する値
-    "15:00"  // 15:00〜18:00の枠を代表する値
+    "11:00", 
+    "15:00"  
 ];
 
 document.addEventListener("DOMContentLoaded", () => {
     const dateInput = document.getElementById("reservation_date");
     const timeSelect = document.getElementById("reservation_time");
-    const form = document.getElementById("reservation_form");
+    // 【修正箇所】ハイフン(-)に修正し、HTMLと名前を一致させました
+    const form = document.getElementById("reservation-form");
 
     // 当日以降しか選択できないようにカレンダーを制限
     const today = new Date().toISOString().split("T")[0];
@@ -106,16 +107,16 @@ document.addEventListener("DOMContentLoaded", () => {
             trigger_text: document.getElementById("trigger_text").value,
             dog_name: document.getElementById("dog_name").value,
             breed: document.getElementById("breed").value,
-            dog_birthday: document.getElementById("dog_birthday").value, // テキスト入力の値
+            dog_birthday: document.getElementById("dog_birthday").value, 
             regular_hospital: document.getElementById("regular_hospital").value,
             allergies: document.getElementById("allergies").value,
             favorite_spots: document.getElementById("favorite_spots").value,
             dislike_spots: document.getElementById("dislike_spots").value,
             gender: gender,
             rabies_vaccine: rabies,
-            rabies_image: rabiesFile,     // 狂犬病済票の画像名を追加
+            rabies_image: rabiesFile,     
             mixed_vaccine: mixed,
-            mixed_vaccine_image: vaccineFile, // ワクチン証明書の画像名を追加（データベースのカラム名に合わせて後ほどSQLで調整します）
+            mixed_vaccine_image: vaccineFile, 
             medical_history: document.getElementById("medical_history").value,
             spay_neuter: spay,
             flea_tick_prevent: document.getElementById("flea_tick_prevent").value || "なし",
@@ -142,7 +143,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 alert("ご予約が完了しました！ご来店をお待ちしております。");
                 form.reset();
                 timeSelect.disabled = true;
-                timeSelect.innerHTML = '<option value="">予約日を選択してください</option>';
+                timeSelect.innerHTML = '<option value="">予約日を先に選択してください</option>';
             }
 
         } catch (err) {
