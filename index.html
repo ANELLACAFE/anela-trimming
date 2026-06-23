@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>トリミングサロン ご予約フォーム</title>
     <link rel="stylesheet" href="style.css">
+    <!-- Supabase CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
@@ -16,14 +17,15 @@
         <form id="reservation-form">
             <h2>お客様・わんちゃん情報入力</h2>
 
+            <!-- 飼い主情報 -->
             <div class="form-group">
                 <label for="owner_name">飼い主さんのお名前 <span class="required">*</span></label>
-                <input type="text" id="owner_name" required placeholder="例：海老原 那哉">
+                <input type="text" id="owner_name" required placeholder="例：山田 太郎">
             </div>
 
             <div class="form-group">
                 <label for="owner_kana">飼い主さんのお名前のフリガナ（カタカナ） <span class="required">*</span></label>
-                <input type="text" id="owner_kana" required placeholder="例：エビハラ トモヤ" pattern="^[ァ-ヶー・]+$">
+                <input type="text" id="owner_kana" required placeholder="例：ヤマダ タロウ" pattern="^[ァ-ヶー・]+$">
             </div>
 
             <div class="form-group">
@@ -33,7 +35,7 @@
 
             <div class="form-group">
                 <label for="address">住所 <span class="required">*</span></label>
-                <input type="text" id="address" required placeholder="例：東京都八王子市松が谷...">
+                <input type="text" id="address" required placeholder="例：埼玉県さいたま市南区南浦和2-28-16 ハイグレード南浦和1F">
             </div>
 
             <div class="form-group">
@@ -46,9 +48,10 @@
                 <input type="text" id="trigger_text" required placeholder="例：インスタグラムを見て、看板を見てなど">
             </div>
 
+            <!-- わんちゃん情報 -->
             <div class="form-group">
                 <label for="dog_name">わんちゃんの名前 <span class="required">*</span></label>
-                <input type="text" id="dog_name" required placeholder="例：うに">
+                <input type="text" id="dog_name" required placeholder="例：ポチ">
             </div>
 
             <div class="form-group">
@@ -57,8 +60,8 @@
             </div>
 
             <div class="form-group">
-                <label for="dog_birthday">わんちゃんの生年月日 <span class="required">*</span></label>
-                <input type="date" id="dog_birthday" required>
+                <label for="dog_birthday">わんちゃんの生年月日・年齢 <span class="required">*</span></label>
+                <input type="text" id="dog_birthday" required placeholder="例：2024年1月1日、または推定3歳など">
             </div>
 
             <div class="form-group">
@@ -95,6 +98,8 @@
                     <label><input type="radio" name="rabies_vaccine" value="あり" required> あり</label>
                     <label><input type="radio" name="rabies_vaccine" value="なし" required> なし</label>
                 </div>
+                <label class="file-label" for="rabies_image" style="margin-top: 8px; display: inline-block;">済票画像の提出</label>
+                <input type="file" id="rabies_image" accept="image/*">
             </div>
 
             <div class="form-group">
@@ -103,6 +108,8 @@
                     <label><input type="radio" name="mixed_vaccine" value="あり" required> あり</label>
                     <label><input type="radio" name="mixed_vaccine" value="なし" required> なし</label>
                 </div>
+                <label class="file-label" for="vaccine_image" style="margin-top: 8px; display: inline-block;">証明書画像の提出</label>
+                <input type="file" id="vaccine_image" accept="image/*">
             </div>
 
             <div class="form-group">
@@ -143,7 +150,7 @@
             <div class="form-group">
                 <label for="reservation_time">予約時間 <span class="required">*</span></label>
                 <select id="reservation_time" required disabled>
-                    <option value="">予約日を選択してください</option>
+                    <option value="">予約日を先に選択してください</option>
                 </select>
             </div>
 

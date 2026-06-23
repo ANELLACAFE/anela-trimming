@@ -90,7 +90,9 @@ document.addEventListener("DOMContentLoaded", () => {
         const mixed = document.querySelector('input[name="mixed_vaccine"]:checked')?.value;
         const spay = document.querySelector('input[name="spay_neuter"]:checked')?.value;
 
-        // 画像ファイル名（ファイル名のみ保存）
+        // 各種画像ファイル名の取得（ファイル名のみ保存）
+        const rabiesFile = document.getElementById("rabies_image").files[0]?.name || "未提出";
+        const vaccineFile = document.getElementById("vaccine_image").files[0]?.name || "未提出";
         const fleaTickFile = document.getElementById("flea_tick_image").files[0]?.name || "未提出";
         const heartwormFile = document.getElementById("heartworm_image").files[0]?.name || "未提出";
 
@@ -104,14 +106,16 @@ document.addEventListener("DOMContentLoaded", () => {
             trigger_text: document.getElementById("trigger_text").value,
             dog_name: document.getElementById("dog_name").value,
             breed: document.getElementById("breed").value,
-            dog_birthday: document.getElementById("dog_birthday").value,
+            dog_birthday: document.getElementById("dog_birthday").value, // テキスト入力の値
             regular_hospital: document.getElementById("regular_hospital").value,
             allergies: document.getElementById("allergies").value,
             favorite_spots: document.getElementById("favorite_spots").value,
             dislike_spots: document.getElementById("dislike_spots").value,
             gender: gender,
             rabies_vaccine: rabies,
+            rabies_image: rabiesFile,     // 狂犬病済票の画像名を追加
             mixed_vaccine: mixed,
+            mixed_vaccine_image: vaccineFile, // ワクチン証明書の画像名を追加（データベースのカラム名に合わせて後ほどSQLで調整します）
             medical_history: document.getElementById("medical_history").value,
             spay_neuter: spay,
             flea_tick_prevent: document.getElementById("flea_tick_prevent").value || "なし",
