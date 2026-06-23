@@ -1,53 +1,60 @@
+/* 全体の基本設定 */
 body {
     font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
-    background-color: #f8f5f0;
-    color: #4a3b32;
+    background-color: #fcfaf7;
+    color: #4a3c31;
     margin: 0;
     padding: 0;
     line-height: 1.6;
 }
 
 header {
-    background-color: #c09d76;
+    background-color: #bda286;
     color: white;
     text-align: center;
-    padding: 20px 10px;
-    box-shadow: 0 20px 20px -20px rgba(0,0,0,0.1);
+    padding: 30px 20px;
 }
 
 header h1 {
     margin: 0;
-    font-size: 1.5rem;
+    font-size: 1.8rem;
+    letter-spacing: 1px;
 }
 
+header p {
+    margin: 5px 0 0 0;
+    font-size: 0.9rem;
+    opacity: 0.9;
+}
+
+/* コンテナ設定 */
 .container {
-    max-width: 600px;
+    max-width: 650px;
     margin: 30px auto;
-    padding: 0 15px;
+    padding: 0 20px;
+    box-sizing: border-box;
 }
 
 form {
     background: white;
     padding: 30px 25px;
-    border-radius: 12px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(189, 162, 134, 0.15);
+    margin-bottom: 50px;
 }
 
 h2 {
-    font-size: 1.2rem;
-    color: #c09d76;
-    border-left: 4px solid #c09d76;
+    font-size: 1.25rem;
+    color: #bda286;
+    border-left: 4px solid #bda286;
     padding-left: 10px;
-    margin-top: 30px;
-    margin-bottom: 20px;
-}
-
-form h2:first-of-type {
     margin-top: 0;
+    margin-bottom: 25px;
 }
 
+/* フォームの各グループ */
 .form-group {
-    margin-bottom: 20px;
+    margin-bottom: 25px;
 }
 
 label {
@@ -59,78 +66,102 @@ label {
 
 .required {
     color: #de5d5d;
-    font-size: 0.8rem;
     margin-left: 3px;
 }
 
+/* 入力項目全般 */
 input[type="text"],
 input[type="tel"],
 input[type="date"],
 select {
     width: 100%;
     padding: 12px;
-    border: 1px solid #ddd;
+    border: 1px solid #ddd1c5;
     border-radius: 6px;
-    font-size: 1rem;
     box-sizing: border-box;
-    background-color: #fafafa;
-    transition: border 0.2s;
+    font-size: 1rem;
+    background-color: #faf8f5;
+    transition: border-color 0.3s;
 }
 
-input:focus, select:focus {
+input[type="text"]:focus,
+input[type="tel"]:focus,
+input[type="date"]:focus,
+select:focus {
     outline: none;
-    border-color: #c09d76;
+    border-color: #bda286;
     background-color: #fff;
 }
 
+/* ラジオボタンの並び */
 .radio-group {
     display: flex;
     gap: 20px;
     margin-top: 5px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
 }
 
 .radio-group label {
+    display: inline-flex;
+    align-items: center;
     font-weight: normal;
     cursor: pointer;
+    margin-bottom: 0;
+}
+
+.radio-group input[type="radio"] {
+    margin-right: 6px;
+    width: 18px;
+    height: 18px;
+    accent-color: #bda286;
+}
+
+/* ファイル添付まわり */
+.file-input-wrapper {
+    background-color: #fdfcfb;
+    border: 1px dashed #ddd1c5;
+    padding: 15px;
+    border-radius: 6px;
+    margin-top: 8px;
 }
 
 .file-label {
+    margin: 0 0 8px 0;
     font-size: 0.85rem;
-    color: #888;
-    margin-top: 8px;
-    font-weight: normal;
+    color: #7a6e65;
 }
 
 input[type="file"] {
     font-size: 0.9rem;
-    color: #666;
 }
 
-hr {
-    border: none;
-    border-top: 1px dashed #ddd;
-    margin: 40px 0 20px 0;
-}
-
-button {
+/* 予約確定ボタン */
+.submit-btn {
+    display: block;
     width: 100%;
-    padding: 15px;
-    background-color: #c09d76;
+    padding: 16px;
+    background-color: #bda286;
     color: white;
     border: none;
     border-radius: 6px;
     font-size: 1.1rem;
     font-weight: bold;
     cursor: pointer;
-    transition: background 0.2s;
-    margin-top: 20px;
+    box-shadow: 0 4px 6px rgba(189, 162, 134, 0.2);
+    transition: background-color 0.2s, transform 0.1s;
+    margin-top: 30px;
 }
 
-button:hover {
-    background-color: #aa865c;
+.submit-btn:hover {
+    background-color: #aa8f73;
 }
 
-button:disabled {
-    background-color: #ccc;
+.submit-btn:active {
+    transform: scale(0.99);
+}
+
+.submit-btn:disabled {
+    background-color: #ccc5be;
     cursor: not-allowed;
 }
