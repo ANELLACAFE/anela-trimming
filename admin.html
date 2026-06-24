@@ -268,6 +268,12 @@ function formatTime(timeStr) {
 function val(v) {
     return (v && String(v).trim()) ? v : '<span class="detail-value empty">未入力</span>';
 }
+function imgVal(v) {
+    if (v && String(v).startsWith("http")) {
+        return `<a href="${v}" target="_blank" title="クリックで拡大"><img src="${v}" style="max-width:160px;max-height:120px;border-radius:6px;border:1px solid #ddd;cursor:pointer;display:block;" alt="画像"></a>`;
+    }
+    return val(v);
+}
 
 // ── ログイン ──
 function handleLogin() {
@@ -455,18 +461,18 @@ function setModalMode(mode) {
             { label: "苦手なところ",        value: res.dislike_spots, full: true },
             { label: "持病・治療中",        value: res.medical_history, full: true },
             { label: "狂犬病予防接種",      value: res.rabies_vaccine },
-            { label: "済票画像",            value: res.rabies_image },
+            { label: "済票画像",            value: res.rabies_image,        isImage: true },
             { label: "混合ワクチン",        value: res.mixed_vaccine },
-            { label: "証明書画像",          value: res.mixed_vaccine_image },
+            { label: "証明書画像",          value: res.mixed_vaccine_image, isImage: true },
             { label: "ノミ・ダニ予防",      value: res.flea_tick_prevent },
-            { label: "ノミ・ダニ画像",      value: res.flea_tick_image },
+            { label: "ノミ・ダニ画像",      value: res.flea_tick_image,     isImage: true },
             { label: "フィラリア予防",      value: res.heartworm_prevent },
-            { label: "フィラリア画像",      value: res.heartworm_image },
+            { label: "フィラリア画像",      value: res.heartworm_image,     isImage: true },
         ];
         viewContent.innerHTML = items.map(item => `
             <div class="detail-item${item.full ? " full-width" : ""}">
                 <div class="detail-label">${item.label}</div>
-                <div class="detail-value">${val(item.value)}</div>
+                <div class="detail-value">${item.isImage ? imgVal(item.value) : val(item.value)}</div>
             </div>
         `).join("");
     }

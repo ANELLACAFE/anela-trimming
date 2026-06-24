@@ -3,6 +3,16 @@ const SUPABASE_URL = "https://omphuvdamamlseifccfq.supabase.co";
 const SUPABASE_KEY = "sb_publishable_nTsYxNVL2N4P3WjSUtSTgw_E1aaCb4d";
 const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+async function uploadCertImage(inputId, label) {
+    const file = document.getElementById(inputId)?.files[0];
+    if (!file) return "未提出";
+    const path = `certificates/${Date.now()}_${label}_${file.name}`;
+    const { error } = await _supabase.storage.from("trimming-photos").upload(path, file, { upsert: true });
+    if (error) { console.error("画像アップロードエラー:", error); return file.name; }
+    const { data } = _supabase.storage.from("trimming-photos").getPublicUrl(path);
+    return data.publicUrl;
+}
+
 // ── トースト ──
 function showToast(message, type = "success") {
     const toast = document.getElementById("toast");
@@ -283,6 +293,13 @@ document.addEventListener("DOMContentLoaded", async () => {
         submitBtn.disabled   = true;
         submitBtn.textContent = "送信中...";
 
+        const [rabiesImgUrl, vaccineImgUrl, fleaImgUrl, heartwormImgUrl] = await Promise.all([
+            uploadCertImage("rabies_image",    "rabies"),
+            uploadCertImage("vaccine_image",   "vaccine"),
+            uploadCertImage("flea_tick_image", "flea"),
+            uploadCertImage("heartworm_image", "heartworm"),
+        ]);
+
         const reservationData = {
             owner_name:          document.getElementById("owner_name").value.trim(),
             owner_kana:          document.getElementById("owner_kana").value.trim(),
@@ -299,15 +316,15 @@ document.addEventListener("DOMContentLoaded", async () => {
             dislike_spots:       document.getElementById("dislike_spots").value.trim(),
             gender:              document.querySelector('input[name="gender"]:checked')?.value,
             rabies_vaccine:      document.querySelector('input[name="rabies_vaccine"]:checked')?.value,
-            rabies_image:        document.getElementById("rabies_image").files[0]?.name || "未提出",
+            rabies_image:        rabiesImgUrl,
             mixed_vaccine:       document.querySelector('input[name="mixed_vaccine"]:checked')?.value,
-            mixed_vaccine_image: document.getElementById("vaccine_image").files[0]?.name || "未提出",
+            mixed_vaccine_image: vaccineImgUrl,
             medical_history:     document.getElementById("medical_history").value.trim(),
             spay_neuter:         document.querySelector('input[name="spay_neuter"]:checked')?.value,
             flea_tick_prevent:   document.getElementById("flea_tick_prevent").value.trim() || "なし",
-            flea_tick_image:     document.getElementById("flea_tick_image").files[0]?.name || "未提出",
+            flea_tick_image:     fleaImgUrl,
             heartworm_prevent:   document.getElementById("heartworm_prevent").value.trim() || "なし",
-            heartworm_image:     document.getElementById("heartworm_image").files[0]?.name || "未提出",
+            heartworm_image:     heartwormImgUrl,
             reservation_date:    dateInput.value,
             reservation_time:    timeSelect.value,
         };
