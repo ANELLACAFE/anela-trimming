@@ -475,13 +475,14 @@ function setModalMode(mode) {
         const historyItems = allReservations.filter(r => r.phone && r.phone === res.phone && r.id !== res.id);
         const historyHtml = historyItems.length > 0 ? `
             <div class="detail-item full-width" style="margin-top:16px;">
-                <div class="detail-label" style="color:#bda286;font-weight:bold;font-size:0.95em;">📋 来店履歴（同一電話番号）</div>
+                <div class="detail-label" style="color:#bda286;font-weight:bold;font-size:0.95em;">📋 来店履歴（クリックでカルテを表示）</div>
                 <div style="margin-top:8px;display:flex;flex-direction:column;gap:6px;">
                     ${historyItems.sort((a,b) => b.reservation_date.localeCompare(a.reservation_date)).map(r => `
-                    <div style="background:#fdf6f0;border-radius:6px;padding:8px 12px;font-size:0.88em;display:flex;gap:12px;align-items:center;">
+                    <div onclick="openHistoryKarte(${r.id})" style="background:#fdf6f0;border-radius:6px;padding:8px 12px;font-size:0.88em;display:flex;gap:12px;align-items:center;cursor:pointer;border:1px solid transparent;" onmouseover="this.style.borderColor='#bda286'" onmouseout="this.style.borderColor='transparent'">
                         <span style="color:#bda286;font-weight:bold;min-width:90px;">${r.reservation_date}</span>
                         <span>${r.dog_name}（${r.breed || "犬種未記入"}）</span>
                         <span style="color:#aaa;">${formatTime(r.reservation_time).label}</span>
+                        <span style="margin-left:auto;color:#bda286;font-size:0.85em;">→ カルテを見る</span>
                     </div>`).join("")}
                 </div>
             </div>` : "";
@@ -499,6 +500,19 @@ window.showDetail = function(index) {
     currentDetailIndex = index;
     setModalMode("view");
     document.getElementById("detail-modal").classList.add("open");
+};
+
+window.openHistoryKarte = function(id) {
+    const idx = allReservations.findIndex(r => r.id === id);
+    if (idx < 0) return;
+    currentDetailIndex = idx;
+    setModalMode("view");
+    document.getElementById("detail-modal").classList.add("open");
+    // トリマーカルテタブに自動切り替え
+    setTimeout(() => {
+        const trimmerTab = Array.from(document.querySelectorAll("button")).find(b => b.textContent.includes("トリマーカルテ"));
+        trimmerTab?.click();
+    }, 50);
 };
 
 document.getElementById("toggle-edit-btn").addEventListener("click", () => {
