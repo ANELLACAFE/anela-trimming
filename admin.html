@@ -149,10 +149,20 @@
 <div id="detail-modal" class="modal" role="dialog" aria-modal="true">
     <div class="modal-content">
         <div class="modal-header">
-            <h2>顧客カルテ詳細</h2>
-            <button class="close-btn" id="modal-close" aria-label="閉じる">×</button>
+            <h2 id="modal-title">顧客カルテ詳細</h2>
+            <div style="display:flex;gap:8px;align-items:center;">
+                <button id="toggle-edit-btn" class="btn btn-ghost btn-sm">✏️ 編集</button>
+                <button class="close-btn" id="modal-close" aria-label="閉じる">×</button>
+            </div>
         </div>
+        <!-- 閲覧モード -->
         <div class="detail-grid" id="modal-detail-content"></div>
+        <!-- 編集モード -->
+        <form id="modal-edit-form" style="display:none;"></form>
+        <div id="modal-edit-actions" style="display:none;justify-content:flex-end;gap:10px;margin-top:20px;">
+            <button type="button" id="cancel-edit-btn" class="btn btn-ghost">キャンセル</button>
+            <button type="button" id="save-edit-btn" class="btn btn-primary">💾 保存する</button>
+        </div>
     </div>
 </div>
 
@@ -293,46 +303,153 @@ document.getElementById("filter-clear-btn").addEventListener("click", () => {
     renderTable();
 });
 
-// カルテ詳細
+// カルテ編集フィールド定義
+const KARTE_EDIT_FIELDS = [
+    { key: "reservation_date",  label: "予約日",               type: "date" },
+    { key: "reservation_time",  label: "予約時間枠",           type: "select", options: [{ value: "11:00", text: "11:00〜14:00" }, { value: "15:00", text: "15:00〜18:00" }] },
+    { key: "owner_name",        label: "飼い主氏名",           type: "text" },
+    { key: "owner_kana",        label: "フリガナ",             type: "text" },
+    { key: "phone",             label: "電話番号",             type: "tel" },
+    { key: "emergency_phone",   label: "緊急連絡先",           type: "tel" },
+    { key: "address",           label: "住所",                 type: "text" },
+    { key: "trigger_text",      label: "当店を知ったきっかけ", type: "text" },
+    { key: "dog_name",          label: "わんちゃん名",         type: "text" },
+    { key: "breed",             label: "犬種",                 type: "text" },
+    { key: "dog_birthday",      label: "生年月日・年齢",       type: "text" },
+    { key: "gender",            label: "性別",                 type: "select", options: [{ value: "男の子", text: "男の子" }, { value: "女の子", text: "女の子" }] },
+    { key: "regular_hospital",  label: "かかりつけ病院",       type: "text" },
+    { key: "spay_neuter",       label: "避妊・去勢手術",       type: "select", options: [{ value: "済み", text: "済み" }, { value: "未手術", text: "未手術" }] },
+    { key: "allergies",         label: "アレルギー",           type: "text" },
+    { key: "favorite_spots",    label: "好きなところ",         type: "text" },
+    { key: "dislike_spots",     label: "苦手なところ",         type: "text" },
+    { key: "medical_history",   label: "持病・治療中",         type: "text" },
+    { key: "rabies_vaccine",    label: "狂犬病予防接種",       type: "select", options: [{ value: "あり", text: "接種済み" }, { value: "当日持参", text: "当日持参" }] },
+    { key: "mixed_vaccine",     label: "混合ワクチン",         type: "select", options: [{ value: "あり", text: "接種済み" }, { value: "当日持参", text: "当日持参" }] },
+    { key: "flea_tick_prevent", label: "ノミ・ダニ予防",       type: "text" },
+    { key: "heartworm_prevent", label: "フィラリア予防",       type: "text" },
+];
+
+let currentDetailIndex = null;
+
+function setModalMode(mode) {
+    const viewContent  = document.getElementById("modal-detail-content");
+    const editForm     = document.getElementById("modal-edit-form");
+    const editActions  = document.getElementById("modal-edit-actions");
+    const toggleBtn    = document.getElementById("toggle-edit-btn");
+    const title        = document.getElementById("modal-title");
+    const res          = allReservations[currentDetailIndex];
+
+    if (mode === "edit") {
+        title.textContent    = "カルテ編集";
+        toggleBtn.textContent = "👁 閲覧に戻る";
+        viewContent.style.display  = "none";
+        editForm.style.display     = "block";
+        editActions.style.display  = "flex";
+
+        const inputStyle = "width:100%;padding:8px;border:1px solid #ddd;border-radius:4px;box-sizing:border-box;font-size:0.95em;";
+        editForm.innerHTML = KARTE_EDIT_FIELDS.map(f => {
+            const rawVal = f.key === "reservation_time"
+                ? (res[f.key] || "").substring(0, 5)
+                : (res[f.key] || "");
+            let inputHtml;
+            if (f.type === "select") {
+                const opts = f.options.map(o =>
+                    `<option value="${o.value}"${rawVal === o.value ? " selected" : ""}>${o.text}</option>`
+                ).join("");
+                inputHtml = `<select name="${f.key}" style="${inputStyle}">${opts}</select>`;
+            } else {
+                inputHtml = `<input type="${f.type}" name="${f.key}" value="${rawVal.replace(/"/g, "&quot;")}" style="${inputStyle}">`;
+            }
+            return `<div class="detail-item full-width"><div class="detail-label">${f.label}</div>${inputHtml}</div>`;
+        }).join("");
+    } else {
+        title.textContent    = "顧客カルテ詳細";
+        toggleBtn.textContent = "✏️ 編集";
+        viewContent.style.display  = "grid";
+        editForm.style.display     = "none";
+        editActions.style.display  = "none";
+
+        const { label } = formatTime(res.reservation_time);
+        const items = [
+            { label: "予約日",              value: res.reservation_date },
+            { label: "予約時間枠",          value: label },
+            { label: "飼い主氏名",          value: res.owner_name },
+            { label: "フリガナ",            value: res.owner_kana },
+            { label: "電話番号",            value: res.phone },
+            { label: "緊急連絡先",          value: res.emergency_phone },
+            { label: "住所",                value: res.address, full: true },
+            { label: "当店を知ったきっかけ", value: res.trigger_text, full: true },
+            { label: "わんちゃん名",        value: res.dog_name },
+            { label: "犬種",                value: res.breed },
+            { label: "生年月日・年齢",      value: res.dog_birthday },
+            { label: "性別",                value: res.gender },
+            { label: "かかりつけ病院",      value: res.regular_hospital },
+            { label: "避妊・去勢手術",      value: res.spay_neuter },
+            { label: "アレルギー",          value: res.allergies, full: true },
+            { label: "好きなところ",        value: res.favorite_spots, full: true },
+            { label: "苦手なところ",        value: res.dislike_spots, full: true },
+            { label: "持病・治療中",        value: res.medical_history, full: true },
+            { label: "狂犬病予防接種",      value: res.rabies_vaccine },
+            { label: "済票画像",            value: res.rabies_image },
+            { label: "混合ワクチン",        value: res.mixed_vaccine },
+            { label: "証明書画像",          value: res.mixed_vaccine_image },
+            { label: "ノミ・ダニ予防",      value: res.flea_tick_prevent },
+            { label: "ノミ・ダニ画像",      value: res.flea_tick_image },
+            { label: "フィラリア予防",      value: res.heartworm_prevent },
+            { label: "フィラリア画像",      value: res.heartworm_image },
+        ];
+        viewContent.innerHTML = items.map(item => `
+            <div class="detail-item${item.full ? " full-width" : ""}">
+                <div class="detail-label">${item.label}</div>
+                <div class="detail-value">${val(item.value)}</div>
+            </div>
+        `).join("");
+    }
+}
+
 window.showDetail = function(index) {
-    const res = allReservations[index];
-    const { label } = formatTime(res.reservation_time);
-    const items = [
-        { label: "予約日",          value: res.reservation_date, full: false },
-        { label: "予約時間枠",      value: label, full: false },
-        { label: "飼い主氏名",      value: res.owner_name, full: false },
-        { label: "フリガナ",        value: res.owner_kana, full: false },
-        { label: "電話番号",        value: res.phone, full: false },
-        { label: "緊急連絡先",      value: res.emergency_phone, full: false },
-        { label: "住所",            value: res.address, full: true },
-        { label: "当店を知ったきっかけ", value: res.trigger_text, full: true },
-        { label: "わんちゃん名",    value: res.dog_name, full: false },
-        { label: "犬種",            value: res.breed, full: false },
-        { label: "生年月日・年齢",  value: res.dog_birthday, full: false },
-        { label: "性別",            value: res.gender, full: false },
-        { label: "かかりつけ病院",  value: res.regular_hospital, full: false },
-        { label: "避妊・去勢手術",  value: res.spay_neuter, full: false },
-        { label: "アレルギー",      value: res.allergies, full: true },
-        { label: "好きなところ",    value: res.favorite_spots, full: true },
-        { label: "苦手なところ",    value: res.dislike_spots, full: true },
-        { label: "持病・治療中",    value: res.medical_history, full: true },
-        { label: "狂犬病予防注射済票",   value: res.rabies_vaccine, full: false },
-        { label: "済票画像",             value: res.rabies_image, full: false },
-        { label: "混合ワクチン",         value: res.mixed_vaccine, full: false },
-        { label: "証明書画像",           value: res.mixed_vaccine_image, full: false },
-        { label: "ノミ・ダニ予防",       value: res.flea_tick_prevent, full: false },
-        { label: "ノミ・ダニ画像",       value: res.flea_tick_image, full: false },
-        { label: "フィラリア予防",       value: res.heartworm_prevent, full: false },
-        { label: "フィラリア画像",       value: res.heartworm_image, full: false },
-    ];
-    document.getElementById("modal-detail-content").innerHTML = items.map(item => `
-        <div class="detail-item${item.full ? " full-width" : ""}">
-            <div class="detail-label">${item.label}</div>
-            <div class="detail-value">${val(item.value)}</div>
-        </div>
-    `).join("");
+    currentDetailIndex = index;
+    setModalMode("view");
     document.getElementById("detail-modal").classList.add("open");
 };
+
+document.getElementById("toggle-edit-btn").addEventListener("click", () => {
+    const isEdit = document.getElementById("modal-edit-form").style.display !== "none";
+    setModalMode(isEdit ? "view" : "edit");
+});
+
+document.getElementById("cancel-edit-btn").addEventListener("click", () => {
+    setModalMode("view");
+});
+
+document.getElementById("save-edit-btn").addEventListener("click", async () => {
+    const res     = allReservations[currentDetailIndex];
+    const form    = document.getElementById("modal-edit-form");
+    const saveBtn = document.getElementById("save-edit-btn");
+    const updates = {};
+    new FormData(form).forEach((value, key) => { updates[key] = value; });
+    if (updates.reservation_time && updates.reservation_time.length === 5) {
+        updates.reservation_time += ":00";
+    }
+    saveBtn.disabled     = true;
+    saveBtn.textContent  = "保存中...";
+    try {
+        const { error } = await _supabase.from("reservations").update(updates).eq("id", res.id);
+        if (error) throw error;
+        showToast("保存しました。");
+        await loadReservations();
+        const newIdx = allReservations.findIndex(r => r.id === res.id);
+        currentDetailIndex = newIdx !== -1 ? newIdx : 0;
+        setModalMode("view");
+    } catch (err) {
+        console.error(err);
+        showToast("保存に失敗しました: " + err.message, "error");
+    } finally {
+        saveBtn.disabled    = false;
+        saveBtn.textContent = "💾 保存する";
+    }
+});
+
 document.getElementById("modal-close").addEventListener("click", () => {
     document.getElementById("detail-modal").classList.remove("open");
 });
