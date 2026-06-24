@@ -94,6 +94,145 @@ function isClosedDay(dateStr) {
 }
 
 // ══════════════════════════════════
+// カレンダーウィジェット
+// ══════════════════════════════════
+const SLOTS = ["11:00", "15:00"];
+// dateStr -> 予約済み時間の Set をキャッシュ
+const bookedCache = {};
+
+async function fetchBookedForMonth(year, month) {
+    const from = `${year}-${String(month).padStart(2,"0")}-01`;
+    const lastDay = new Date(year, month, 0).getDate();
+    const to   = `${year}-${String(month).padStart(2,"0")}-${lastDay}`;
+    try {
+        const { data, error } = await _supabase
+            .from("reservations")
+            .select("reservation_date, reservation_time")
+            .gte("reservation_date", from)
+            .lte("reservation_date", to);
+        if (error) throw error;
+        data.forEach(r => {
+            const d = r.reservation_date;
+            if (!bookedCache[d]) bookedCache[d] = new Set();
+            bookedCache[d].add(r.reservation_time.substring(0,5));
+        });
+    } catch(e) {
+        console.warn("予約データ取得エラー", e);
+    }
+}
+
+function isFullyBooked(dateStr) {
+    const booked = bookedCache[dateStr];
+    if (!booked) return false;
+    return SLOTS.every(s => booked.has(s));
+}
+
+let calYear, calMonth, calSelectedDate = null;
+
+function renderCalendar() {
+    const today = new Date();
+    const todayStr = today.toISOString().split("T")[0];
+    const grid = document.getElementById("cal-grid");
+    const label = document.getElementById("cal-month-label");
+    if (!grid) return;
+
+    label.textContent = `${calYear}年 ${calMonth}月`;
+
+    const firstDay = new Date(calYear, calMonth - 1, 1).getDay();
+    const daysInMonth = new Date(calYear, calMonth, 0).getDate();
+
+    let html = "";
+    for (let i = 0; i < firstDay; i++) {
+        html += `<div class="cal-day empty"></div>`;
+    }
+    for (let d = 1; d <= daysInMonth; d++) {
+        const dateStr = `${calYear}-${String(calMonth).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
+        const isPast    = dateStr < todayStr;
+        const isClosed  = isClosedDay(dateStr);
+        const isFull    = isFullyBooked(dateStr);
+        const isToday   = dateStr === todayStr;
+        const isSelected = dateStr === calSelectedDate;
+
+        const dow = new Date(dateStr + "T00:00:00").getDay();
+        const numClass = dow === 0 ? "style='color:#c0392b'" : dow === 6 ? "style='color:#2980b9'" : "";
+
+        let cls = "cal-day";
+        let sub = "";
+        if (isSelected)    { cls += " selected"; sub = "▼ 選択中"; }
+        else if (isPast)   { cls += " past"; }
+        else if (isClosed) { cls += " closed"; sub = "定休日"; }
+        else if (isFull)   { cls += " full"; sub = "満席"; }
+        else               { cls += " available"; sub = "空きあり"; }
+        if (isToday)       { cls += " today"; }
+
+        const clickAttr = (!isPast && !isClosed && !isFull)
+            ? `onclick="calSelectDate('${dateStr}')"` : "";
+
+        html += `<div class="${cls}" ${clickAttr}>
+            <span class="cal-day-num" ${numClass}>${d}</span>
+            <span class="cal-day-sub">${sub}</span>
+        </div>`;
+    }
+    grid.innerHTML = html;
+    document.getElementById("cal-loading").style.display = "none";
+}
+
+window.calSelectDate = async function(dateStr) {
+    calSelectedDate = dateStr;
+    renderCalendar();
+
+    const dateInput = document.getElementById("reservation_date");
+    const timeSelect = document.getElementById("reservation_time");
+    const selectedLabel = document.getElementById("cal-selected-label");
+
+    dateInput.value = dateStr;
+    dateInput.dispatchEvent(new Event("change", { bubbles: true }));
+
+    const d = new Date(dateStr + "T00:00:00");
+    const DAY = ["日","月","火","水","木","金","土"];
+    selectedLabel.textContent = `選択中：${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日（${DAY[d.getDay()]}）`;
+    selectedLabel.style.display = "block";
+
+    // 時間枠を読み込む
+    timeSelect.disabled = true;
+    timeSelect.innerHTML = '<option value="">空き確認中...</option>';
+    try {
+        const { data, error } = await _supabase
+            .from("reservations")
+            .select("reservation_time")
+            .eq("reservation_date", dateStr);
+        if (error) throw error;
+
+        const reserved = data.map(r => r.reservation_time.substring(0,5));
+        // キャッシュを更新
+        bookedCache[dateStr] = new Set(reserved);
+
+        timeSelect.innerHTML = '<option value="">時間枠を選択してください</option>';
+        [{ value:"11:00", label:"11:00 〜 14:00" },
+         { value:"15:00", label:"15:00 〜 18:00" }].forEach(slot => {
+            const opt = document.createElement("option");
+            opt.value = slot.value;
+            if (reserved.includes(slot.value)) {
+                opt.textContent = slot.label + "（予約済み）";
+                opt.disabled = true;
+            } else {
+                opt.textContent = slot.label + "（空きあり）";
+            }
+            timeSelect.appendChild(opt);
+        });
+        timeSelect.disabled = false;
+
+        // 満席なら再描画
+        if (isFullyBooked(dateStr)) renderCalendar();
+
+    } catch(err) {
+        console.error(err);
+        timeSelect.innerHTML = '<option value="">取得に失敗しました</option>';
+        showToast("予約枠の取得に失敗しました。", "error");
+    }
+};
+
+// ══════════════════════════════════
 // メイン
 // ══════════════════════════════════
 document.addEventListener("DOMContentLoaded", async () => {
@@ -102,55 +241,27 @@ document.addEventListener("DOMContentLoaded", async () => {
     const form       = document.getElementById("reservation-form");
     const submitBtn  = document.getElementById("submit-btn");
 
-    dateInput.min = new Date().toISOString().split("T")[0];
-
     // スケジュール設定を先に読み込む
     await loadScheduleSettings();
 
-    // ── 日付選択 → 空き確認 ──
-    dateInput.addEventListener("change", async () => {
-        const selectedDate = dateInput.value;
-        if (!selectedDate) return;
+    // カレンダー初期化
+    const now = new Date();
+    calYear  = now.getFullYear();
+    calMonth = now.getMonth() + 1;
+    await fetchBookedForMonth(calYear, calMonth);
+    renderCalendar();
 
-        // 休業日チェック
-        if (isClosedDay(selectedDate)) {
-            timeSelect.disabled = true;
-            timeSelect.innerHTML = '<option value="">この日はお休みです</option>';
-            showToast("選択された日はお休みです。別の日をお選びください。", "error");
-            return;
-        }
-
-        timeSelect.disabled = true;
-        timeSelect.innerHTML = '<option value="">空き確認中...</option>';
-
-        try {
-            const { data, error } = await _supabase
-                .from("reservations")
-                .select("reservation_time")
-                .eq("reservation_date", selectedDate);
-            if (error) throw error;
-
-            const reservedTimes = data.map(r => r.reservation_time.substring(0, 5));
-            timeSelect.innerHTML = '<option value="">時間枠を選択してください</option>';
-
-            [{ value: "11:00", label: "11:00 〜 14:00" },
-             { value: "15:00", label: "15:00 〜 18:00" }].forEach(slot => {
-                const opt = document.createElement("option");
-                opt.value = slot.value;
-                if (reservedTimes.includes(slot.value)) {
-                    opt.textContent = slot.label + "（予約済み）";
-                    opt.disabled = true;
-                } else {
-                    opt.textContent = slot.label + "（空きあり）";
-                }
-                timeSelect.appendChild(opt);
-            });
-            timeSelect.disabled = false;
-        } catch (err) {
-            console.error(err);
-            timeSelect.innerHTML = '<option value="">取得に失敗しました</option>';
-            showToast("予約枠の取得に失敗しました。", "error");
-        }
+    document.getElementById("cal-prev").addEventListener("click", async () => {
+        calMonth--;
+        if (calMonth < 1) { calMonth = 12; calYear--; }
+        await fetchBookedForMonth(calYear, calMonth);
+        renderCalendar();
+    });
+    document.getElementById("cal-next").addEventListener("click", async () => {
+        calMonth++;
+        if (calMonth > 12) { calMonth = 1; calYear++; }
+        await fetchBookedForMonth(calYear, calMonth);
+        renderCalendar();
     });
 
     // ── フォーム送信 ──

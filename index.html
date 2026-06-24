@@ -178,8 +178,36 @@
                 <h2 class="section-heading">ご予約日時の選択</h2>
 
                 <div class="form-group">
-                    <label for="reservation_date">予約日<span class="required">必須</span></label>
-                    <input type="date" id="reservation_date" required>
+                    <label>予約日<span class="required">必須</span></label>
+                    <p style="font-size:0.85em;color:#999;margin:0 0 10px;">
+                        <span class="cal-legend-dot open"></span>予約可 &nbsp;
+                        <span class="cal-legend-dot closed"></span>定休日 &nbsp;
+                        <span class="cal-legend-dot full"></span>満席
+                    </p>
+
+                    <!-- カスタムカレンダー -->
+                    <div id="calendar-widget">
+                        <div class="cal-header">
+                            <button type="button" id="cal-prev" class="cal-nav-btn">&#8249;</button>
+                            <span id="cal-month-label"></span>
+                            <button type="button" id="cal-next" class="cal-nav-btn">&#8250;</button>
+                        </div>
+                        <div class="cal-weekdays">
+                            <span class="cal-wday sun">日</span>
+                            <span class="cal-wday">月</span>
+                            <span class="cal-wday">火</span>
+                            <span class="cal-wday">水</span>
+                            <span class="cal-wday">木</span>
+                            <span class="cal-wday">金</span>
+                            <span class="cal-wday sat">土</span>
+                        </div>
+                        <div id="cal-grid"></div>
+                        <p id="cal-loading" style="text-align:center;font-size:0.85em;color:#aaa;padding:8px 0;">読み込み中...</p>
+                    </div>
+
+                    <!-- 選択された日付を保持（フォーム送信用・非表示） -->
+                    <input type="date" id="reservation_date" required style="display:none">
+                    <p id="cal-selected-label" style="margin-top:8px;font-size:0.95em;color:#bda286;font-weight:bold;display:none;"></p>
                     <p class="field-error" id="err-reservation_date">予約日を選択してください。</p>
                 </div>
 

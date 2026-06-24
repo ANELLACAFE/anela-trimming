@@ -707,3 +707,158 @@ input[type="date"].has-closed { border-color: var(--color-primary); }
   .weekday-toggle label { width: 46px; height: 46px; font-size: 0.8rem; }
   .tab-btn { font-size: 0.82rem; padding: 9px 10px; }
 }
+
+/* ══════════════════════════════════
+   カレンダーウィジェット
+══════════════════════════════════ */
+#calendar-widget {
+  border: 1px solid #ddd1c5;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #fff;
+  user-select: none;
+}
+
+.cal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #bda286;
+  color: white;
+  padding: 12px 16px;
+}
+.cal-header span {
+  font-weight: bold;
+  font-size: 1.05rem;
+}
+.cal-nav-btn {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1.6rem;
+  cursor: pointer;
+  line-height: 1;
+  padding: 0 8px;
+  opacity: 0.85;
+}
+.cal-nav-btn:hover { opacity: 1; }
+
+.cal-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  background: #f5ede6;
+  padding: 6px 0 4px;
+}
+.cal-wday {
+  text-align: center;
+  font-size: 0.78rem;
+  font-weight: bold;
+  color: #8a7060;
+}
+.cal-wday.sun { color: #c0392b; }
+.cal-wday.sat { color: #2980b9; }
+
+#cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  padding: 8px;
+  background: #fff;
+}
+
+.cal-day {
+  aspect-ratio: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  cursor: default;
+  position: relative;
+  padding: 2px;
+  min-height: 42px;
+}
+.cal-day .cal-day-num {
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+.cal-day .cal-day-sub {
+  font-size: 0.6rem;
+  line-height: 1;
+  margin-top: 1px;
+}
+
+/* 空白セル */
+.cal-day.empty { background: none; cursor: default; }
+
+/* 過去の日 */
+.cal-day.past {
+  color: #ccc;
+  background: #fafafa;
+}
+
+/* 定休日 */
+.cal-day.closed {
+  background: #f5f0ed;
+  color: #c4a99a;
+}
+.cal-day.closed .cal-day-sub { color: #c4a99a; }
+
+/* 満席 */
+.cal-day.full {
+  background: #fef0f0;
+  color: #e07070;
+}
+.cal-day.full .cal-day-sub { color: #e07070; }
+
+/* 予約可能 */
+.cal-day.available {
+  background: #f0faf2;
+  color: #2d7a3d;
+  cursor: pointer;
+  border: 1px solid #b8e6c0;
+}
+.cal-day.available:hover {
+  background: #c8edd0;
+  border-color: #6aba7d;
+  transform: scale(1.05);
+  z-index: 1;
+}
+
+/* 選択中 */
+.cal-day.selected {
+  background: #bda286 !important;
+  color: white !important;
+  border-color: #a38b71 !important;
+  transform: scale(1.08);
+  z-index: 2;
+  box-shadow: 0 2px 8px rgba(189,162,134,0.5);
+}
+.cal-day.selected .cal-day-sub { color: rgba(255,255,255,0.85) !important; }
+
+/* 今日 */
+.cal-day.today:not(.closed):not(.past) .cal-day-num {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* 凡例ドット */
+.cal-legend-dot {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  margin-right: 3px;
+  vertical-align: middle;
+}
+.cal-legend-dot.open   { background: #6aba7d; border: 1px solid #b8e6c0; }
+.cal-legend-dot.closed { background: #c4a99a; }
+.cal-legend-dot.full   { background: #e07070; }
+
+@media (max-width: 400px) {
+  .cal-day { font-size: 0.8rem; min-height: 36px; }
+  .cal-day .cal-day-num { font-size: 0.85rem; }
+  .cal-day .cal-day-sub { font-size: 0.55rem; }
+}
