@@ -325,6 +325,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             flea_tick_image:     fleaImgUrl,
             heartworm_prevent:   document.getElementById("heartworm_prevent").value.trim() || "なし",
             heartworm_image:     heartwormImgUrl,
+            booking_request:     document.getElementById("booking_request").value.trim(),
             reservation_date:    dateInput.value,
             reservation_time:    timeSelect.value,
         };

@@ -396,8 +396,9 @@ const KARTE_EDIT_FIELDS = [
     { key: "medical_history",   label: "持病・治療中",         type: "text" },
     { key: "rabies_vaccine",    label: "狂犬病予防接種",       type: "select", options: [{ value: "あり", text: "接種済み" }, { value: "当日持参", text: "当日持参" }] },
     { key: "mixed_vaccine",     label: "混合ワクチン",         type: "select", options: [{ value: "あり", text: "接種済み" }, { value: "当日持参", text: "当日持参" }] },
-    { key: "flea_tick_prevent", label: "ノミ・ダニ予防",       type: "text" },
-    { key: "heartworm_prevent", label: "フィラリア予防",       type: "text" },
+    { key: "flea_tick_prevent",  label: "ノミ・ダニ予防",       type: "text" },
+    { key: "heartworm_prevent",  label: "フィラリア予防",       type: "text" },
+    { key: "booking_request",    label: "カットのご要望",       type: "text" },
 ];
 
 let currentDetailIndex = null;
@@ -468,13 +469,29 @@ function setModalMode(mode) {
             { label: "ノミ・ダニ画像",      value: res.flea_tick_image,     isImage: true },
             { label: "フィラリア予防",      value: res.heartworm_prevent },
             { label: "フィラリア画像",      value: res.heartworm_image,     isImage: true },
+            { label: "カットのご要望",      value: res.booking_request,     full: true },
         ];
+
+        const historyItems = allReservations.filter(r => r.phone && r.phone === res.phone && r.id !== res.id);
+        const historyHtml = historyItems.length > 0 ? `
+            <div class="detail-item full-width" style="margin-top:16px;">
+                <div class="detail-label" style="color:#bda286;font-weight:bold;font-size:0.95em;">📋 来店履歴（同一電話番号）</div>
+                <div style="margin-top:8px;display:flex;flex-direction:column;gap:6px;">
+                    ${historyItems.sort((a,b) => b.reservation_date.localeCompare(a.reservation_date)).map(r => `
+                    <div style="background:#fdf6f0;border-radius:6px;padding:8px 12px;font-size:0.88em;display:flex;gap:12px;align-items:center;">
+                        <span style="color:#bda286;font-weight:bold;min-width:90px;">${r.reservation_date}</span>
+                        <span>${r.dog_name}（${r.breed || "犬種未記入"}）</span>
+                        <span style="color:#aaa;">${formatTime(r.reservation_time).label}</span>
+                    </div>`).join("")}
+                </div>
+            </div>` : "";
+
         viewContent.innerHTML = items.map(item => `
             <div class="detail-item${item.full ? " full-width" : ""}">
                 <div class="detail-label">${item.label}</div>
                 <div class="detail-value">${item.isImage ? imgVal(item.value) : val(item.value)}</div>
             </div>
-        `).join("");
+        `).join("") + historyHtml;
     }
 }
 
