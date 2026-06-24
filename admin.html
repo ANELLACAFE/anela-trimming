@@ -149,20 +149,85 @@
 <div id="detail-modal" class="modal" role="dialog" aria-modal="true">
     <div class="modal-content">
         <div class="modal-header">
-            <h2 id="modal-title">顧客カルテ詳細</h2>
-            <div style="display:flex;gap:8px;align-items:center;">
+            <h2 id="modal-title">顧客カルテ</h2>
+            <button class="close-btn" id="modal-close" aria-label="閉じる">×</button>
+        </div>
+
+        <!-- モーダル内タブ -->
+        <div class="modal-tab-bar">
+            <button class="modal-tab-btn active" data-mtab="customer">👤 顧客情報</button>
+            <button class="modal-tab-btn" data-mtab="trimmer">✂️ トリマーカルテ</button>
+        </div>
+
+        <!-- ── タブ①：顧客情報 ── -->
+        <div class="modal-tab-panel active" id="mtab-customer">
+            <div style="display:flex;justify-content:flex-end;margin-bottom:10px;">
                 <button id="toggle-edit-btn" class="btn btn-ghost btn-sm">✏️ 編集</button>
-                <button class="close-btn" id="modal-close" aria-label="閉じる">×</button>
+            </div>
+            <div class="detail-grid" id="modal-detail-content"></div>
+            <form id="modal-edit-form" style="display:none;"></form>
+            <div id="modal-edit-actions" style="display:none;justify-content:flex-end;gap:10px;margin-top:20px;">
+                <button type="button" id="cancel-edit-btn" class="btn btn-ghost">キャンセル</button>
+                <button type="button" id="save-edit-btn" class="btn btn-primary">💾 保存する</button>
             </div>
         </div>
-        <!-- 閲覧モード -->
-        <div class="detail-grid" id="modal-detail-content"></div>
-        <!-- 編集モード -->
-        <form id="modal-edit-form" style="display:none;"></form>
-        <div id="modal-edit-actions" style="display:none;justify-content:flex-end;gap:10px;margin-top:20px;">
-            <button type="button" id="cancel-edit-btn" class="btn btn-ghost">キャンセル</button>
-            <button type="button" id="save-edit-btn" class="btn btn-primary">💾 保存する</button>
+
+        <!-- ── タブ②：トリマーカルテ ── -->
+        <div class="modal-tab-panel" id="mtab-trimmer" style="display:none;">
+            <form id="trimmer-form">
+
+                <div class="trimmer-section">
+                    <h3 class="trimmer-section-title">📅 施術記録</h3>
+
+                    <div class="trimmer-field">
+                        <label class="trimmer-label">施術日</label>
+                        <input type="date" name="trim_date" id="trim_date" class="trimmer-input">
+                        <p class="trimmer-hint">※予約日が自動入力されます。変更も可能です。</p>
+                    </div>
+
+                    <div class="trimmer-field">
+                        <label class="trimmer-label">カットスタイル</label>
+                        <input type="text" name="cut_style" id="cut_style" class="trimmer-input" placeholder="例：テディベアカット、サマーカット">
+                    </div>
+
+                    <div class="trimmer-field">
+                        <label class="trimmer-label">カット内容・仕上がりメモ</label>
+                        <textarea name="cut_notes" id="cut_notes" class="trimmer-textarea" rows="4" placeholder="例：全体3cm、顔周り丸め、足回りすっきり。耳の毛は残す。"></textarea>
+                    </div>
+
+                    <div class="trimmer-field">
+                        <label class="trimmer-label">気になった点・体の状態</label>
+                        <textarea name="health_notes" id="health_notes" class="trimmer-textarea" rows="3" placeholder="例：左耳に軽い炎症あり。体重増加気味。前回より毛が柔らかくなった。"></textarea>
+                    </div>
+
+                    <div class="trimmer-field">
+                        <label class="trimmer-label">次回来店の目安</label>
+                        <input type="text" name="next_visit_note" id="next_visit_note" class="trimmer-input" placeholder="例：約1ヶ月後（7月末〜8月初め）">
+                    </div>
+                </div>
+
+                <div class="trimmer-section">
+                    <h3 class="trimmer-section-title">📷 施術写真</h3>
+                    <p class="trimmer-hint">ビフォー・アフターなどの写真を追加できます。</p>
+
+                    <!-- 既存写真一覧 -->
+                    <div id="trimmer-photo-list" style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px;"></div>
+
+                    <!-- アップロード -->
+                    <label class="trimmer-upload-label">
+                        <input type="file" id="trimmer-photo-input" accept="image/*" multiple style="display:none;">
+                        <span>📎 写真を追加する</span>
+                    </label>
+                    <p id="trimmer-upload-status" class="trimmer-hint"></p>
+                </div>
+
+            </form>
+
+            <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:20px;">
+                <button type="button" id="save-trimmer-btn" class="btn btn-primary">💾 カルテを保存する</button>
+            </div>
         </div>
+
     </div>
 </div>
 
@@ -184,7 +249,7 @@
 const SUPABASE_URL   = "https://omphuvdamamlseifccfq.supabase.co";
 const SUPABASE_KEY   = "sb_publishable_nTsYxNVL2N4P3WjSUtSTgw_E1aaCb4d";
 const _supabase      = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-const ADMIN_PASSWORD = "anela";
+const ADMIN_PASSWORD = "anella";
 
 // ── ユーティリティ ──
 function showToast(message, type = "success") {
@@ -456,6 +521,132 @@ document.getElementById("modal-close").addEventListener("click", () => {
 document.getElementById("detail-modal").addEventListener("click", e => {
     if (e.target === document.getElementById("detail-modal"))
         document.getElementById("detail-modal").classList.remove("open");
+});
+
+// ══════════════════════════════════
+// モーダル内タブ切り替え
+// ══════════════════════════════════
+document.querySelectorAll(".modal-tab-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+        document.querySelectorAll(".modal-tab-btn").forEach(b => b.classList.remove("active"));
+        document.querySelectorAll(".modal-tab-panel").forEach(p => { p.style.display = "none"; p.classList.remove("active"); });
+        btn.classList.add("active");
+        const panel = document.getElementById("mtab-" + btn.dataset.mtab);
+        panel.style.display = "block";
+        panel.classList.add("active");
+        if (btn.dataset.mtab === "trimmer") loadTrimmerKarte();
+    });
+});
+
+// モーダルを開く際にタブをリセット
+const _origShowDetail = window.showDetail;
+window.showDetail = function(index) {
+    // タブを顧客情報に戻す
+    document.querySelectorAll(".modal-tab-btn").forEach(b => b.classList.remove("active"));
+    document.querySelectorAll(".modal-tab-panel").forEach(p => { p.style.display = "none"; p.classList.remove("active"); });
+    document.querySelector('.modal-tab-btn[data-mtab="customer"]').classList.add("active");
+    const cp = document.getElementById("mtab-customer");
+    cp.style.display = "block"; cp.classList.add("active");
+    _origShowDetail(index);
+};
+
+// ══════════════════════════════════
+// トリマーカルテ
+// ══════════════════════════════════
+const TRIMMER_FIELDS = ["trim_date","cut_style","cut_notes","health_notes","next_visit_note","photo_urls"];
+const STORAGE_BUCKET = "trimming-photos";
+
+async function loadTrimmerKarte() {
+    const res = allReservations[currentDetailIndex];
+    document.getElementById("trim_date").value         = res.trim_date        || res.reservation_date || "";
+    document.getElementById("cut_style").value         = res.cut_style        || "";
+    document.getElementById("cut_notes").value         = res.cut_notes        || "";
+    document.getElementById("health_notes").value      = res.health_notes     || "";
+    document.getElementById("next_visit_note").value   = res.next_visit_note  || "";
+    renderPhotoList(res.photo_urls);
+}
+
+function renderPhotoList(photoUrlsJson) {
+    const container = document.getElementById("trimmer-photo-list");
+    let urls = [];
+    try { urls = JSON.parse(photoUrlsJson || "[]"); } catch(e) {}
+    container.innerHTML = urls.map((url, i) => `
+        <div class="trimmer-photo-thumb">
+            <img src="${url}" alt="施術写真${i+1}" onclick="window.open('${url}','_blank')">
+            <button class="del-photo-btn" onclick="deletePhoto(${i})" title="削除">×</button>
+        </div>
+    `).join("");
+}
+
+window.deletePhoto = async function(idx) {
+    if (!confirm("この写真を削除しますか？")) return;
+    const res = allReservations[currentDetailIndex];
+    let urls = [];
+    try { urls = JSON.parse(res.photo_urls || "[]"); } catch(e) {}
+    urls.splice(idx, 1);
+    const newJson = JSON.stringify(urls);
+    const { error } = await _supabase.from("reservations").update({ photo_urls: newJson }).eq("id", res.id);
+    if (error) { showToast("削除失敗: " + error.message, "error"); return; }
+    res.photo_urls = newJson;
+    renderPhotoList(newJson);
+    showToast("写真を削除しました。");
+};
+
+// 写真アップロード
+document.getElementById("trimmer-photo-input").addEventListener("change", async (e) => {
+    const files = Array.from(e.target.files);
+    if (!files.length) return;
+    const res = allReservations[currentDetailIndex];
+    const statusEl = document.getElementById("trimmer-upload-status");
+    statusEl.textContent = "アップロード中...";
+
+    let urls = [];
+    try { urls = JSON.parse(res.photo_urls || "[]"); } catch(ex) {}
+
+    for (const file of files) {
+        const ext  = file.name.split(".").pop();
+        const path = `${res.id}/${Date.now()}.${ext}`;
+        const { error: upErr } = await _supabase.storage.from(STORAGE_BUCKET).upload(path, file, { upsert: true });
+        if (upErr) { showToast("写真アップロード失敗: " + upErr.message, "error"); continue; }
+        const { data: urlData } = _supabase.storage.from(STORAGE_BUCKET).getPublicUrl(path);
+        if (urlData?.publicUrl) urls.push(urlData.publicUrl);
+    }
+
+    const newJson = JSON.stringify(urls);
+    const { error: dbErr } = await _supabase.from("reservations").update({ photo_urls: newJson }).eq("id", res.id);
+    if (dbErr) { showToast("DB保存失敗: " + dbErr.message, "error"); return; }
+    res.photo_urls = newJson;
+    renderPhotoList(newJson);
+    statusEl.textContent = `${files.length}枚 アップロード完了`;
+    e.target.value = "";
+});
+
+// トリマーカルテ保存
+document.getElementById("save-trimmer-btn").addEventListener("click", async () => {
+    const res = allReservations[currentDetailIndex];
+    const saveBtn = document.getElementById("save-trimmer-btn");
+    saveBtn.disabled = true;
+    saveBtn.textContent = "保存中...";
+
+    const updates = {
+        trim_date:       document.getElementById("trim_date").value       || null,
+        cut_style:       document.getElementById("cut_style").value       || null,
+        cut_notes:       document.getElementById("cut_notes").value       || null,
+        health_notes:    document.getElementById("health_notes").value    || null,
+        next_visit_note: document.getElementById("next_visit_note").value || null,
+    };
+
+    try {
+        const { error } = await _supabase.from("reservations").update(updates).eq("id", res.id);
+        if (error) throw error;
+        Object.assign(allReservations[currentDetailIndex], updates);
+        showToast("トリマーカルテを保存しました。");
+    } catch(err) {
+        showToast("保存失敗: " + err.message, "error");
+    } finally {
+        saveBtn.disabled = false;
+        saveBtn.textContent = "💾 カルテを保存する";
+    }
 });
 
 // 削除
