@@ -23,9 +23,9 @@
                 <h2 class="section-heading">飼い主様の情報</h2>
 
                 <div class="form-group">
-                    <label for="owner_name">お名前<span class="required">必須</span></label>
-                    <input type="text" id="owner_name" required placeholder="例：山田 太郎">
-                    <p class="field-error" id="err-owner_name">お名前を入力してください。</p>
+                    <label for="owner_name">お名前（漢字フルネーム）<span class="required">必須</span></label>
+                    <input type="text" id="owner_name" required placeholder="例：山田 太郎（漢字フルネームでご入力ください）">
+                    <p class="field-error" id="err-owner_name">お名前を漢字フルネームで入力してください。</p>
                 </div>
 
                 <div class="form-group">
@@ -41,9 +41,9 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="address">ご住所<span class="required">必須</span></label>
-                    <input type="text" id="address" required placeholder="例：埼玉県さいたま市南区...">
-                    <p class="field-error" id="err-address">ご住所を入力してください。</p>
+                    <label for="address">ご住所（番地まで）<span class="required">必須</span></label>
+                    <input type="text" id="address" required placeholder="例：埼玉県さいたま市南区南浦和1-2-3（都道府県〜番地までご入力ください）">
+                    <p class="field-error" id="err-address">都道府県・市区町村・番地まで入力してください。</p>
                 </div>
 
                 <div class="form-group">
@@ -53,8 +53,9 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="trigger_text">当店を知ったきっかけ</label>
+                    <label for="trigger_text">当店を知ったきっかけ<span class="required">必須</span></label>
                     <input type="text" id="trigger_text" placeholder="例：インスタグラム、ご紹介など">
+                    <p class="field-error" id="err-trigger_text">きっかけを入力してください。</p>
                 </div>
             </div>
 
@@ -90,28 +91,33 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="regular_hospital">かかりつけ動物病院</label>
-                    <input type="text" id="regular_hospital" placeholder="例：〇〇動物病院">
+                    <label for="regular_hospital">かかりつけ動物病院<span class="required">必須</span></label>
+                    <input type="text" id="regular_hospital" placeholder="例：〇〇動物病院（ない場合は「なし」とご入力ください）">
+                    <p class="field-error" id="err-regular_hospital">かかりつけ動物病院を入力してください。ない場合は「なし」とご入力ください。</p>
                 </div>
 
                 <div class="form-group">
-                    <label for="allergies">アレルギー（ある場合は具体的に）</label>
-                    <input type="text" id="allergies" placeholder="例：チキンアレルギーあり　／　特になし">
+                    <label for="allergies">アレルギー<span class="required">必須</span></label>
+                    <input type="text" id="allergies" placeholder="例：チキンアレルギーあり　／　ない場合は「なし」とご入力ください">
+                    <p class="field-error" id="err-allergies">アレルギーを入力してください。ない場合は「なし」とご入力ください。</p>
                 </div>
 
                 <div class="form-group">
-                    <label for="favorite_spots">触られて好きなところ・喜ぶこと</label>
-                    <input type="text" id="favorite_spots" placeholder="例：あごの下、おもちゃで遊ぶこと">
+                    <label for="favorite_spots">触られて好きなところ・喜ぶこと<span class="required">必須</span></label>
+                    <input type="text" id="favorite_spots" placeholder="例：あごの下、おもちゃで遊ぶこと　／　不明な場合は「不明」とご入力ください">
+                    <p class="field-error" id="err-favorite_spots">好きなところを入力してください。不明な場合は「不明」とご入力ください。</p>
                 </div>
 
                 <div class="form-group">
-                    <label for="dislike_spots">触られて苦手なところ・嫌がること</label>
-                    <input type="text" id="dislike_spots" placeholder="例：前足の爪切り、耳掃除">
+                    <label for="dislike_spots">触られて苦手なところ・嫌がること<span class="required">必須</span></label>
+                    <input type="text" id="dislike_spots" placeholder="例：前足の爪切り、耳掃除　／　不明な場合は「不明」とご入力ください">
+                    <p class="field-error" id="err-dislike_spots">苦手なところを入力してください。不明な場合は「不明」とご入力ください。</p>
                 </div>
 
                 <div class="form-group">
-                    <label for="medical_history">持病・現在治療中の病気や怪我</label>
-                    <input type="text" id="medical_history" placeholder="例：心臓に持病あり　／　特になし">
+                    <label for="medical_history">持病・現在治療中の病気や怪我<span class="required">必須</span></label>
+                    <input type="text" id="medical_history" placeholder="例：心臓に持病あり　／　ない場合は「なし」とご入力ください">
+                    <p class="field-error" id="err-medical_history">持病・治療中の内容を入力してください。ない場合は「なし」とご入力ください。</p>
                 </div>
 
                 <div class="form-group">

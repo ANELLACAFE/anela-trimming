@@ -41,11 +41,20 @@ function validateForm() {
     clearAllErrors();
 
     ["owner_name","owner_kana","phone","address","emergency_phone",
-     "dog_name","breed","dog_birthday","reservation_date"].forEach(id => {
+     "dog_name","breed","dog_birthday","reservation_date",
+     "trigger_text","regular_hospital","allergies",
+     "favorite_spots","dislike_spots","medical_history"].forEach(id => {
         if (!(document.getElementById(id)?.value || "").trim()) {
             setError(id, true); valid = false;
         }
     });
+
+    // 住所：都道府県のみは不可（10文字以上を目安に番地まで要求）
+    const addr = (document.getElementById("address")?.value || "").trim();
+    if (addr && addr.length < 10) {
+        setError("address", true, "都道府県・市区町村・番地まで入力してください。");
+        valid = false;
+    }
 
     // フリガナ
     const kana = (document.getElementById("owner_kana")?.value || "").trim();
