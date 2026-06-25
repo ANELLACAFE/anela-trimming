@@ -276,6 +276,71 @@ input[type="file"] {
 #toast.success { background: var(--color-success); }
 #toast.error   { background: var(--color-error); }
 
+/* ── 予約完了画面 ── */
+.complete-card {
+  background: #fff;
+  border-radius: 20px;
+  box-shadow: 0 8px 32px rgba(189,162,134,0.15);
+  padding: 48px 32px;
+  text-align: center;
+  max-width: 480px;
+  margin: 40px auto;
+}
+.complete-icon {
+  font-size: 3.5rem;
+  margin-bottom: 16px;
+}
+.complete-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-deep);
+  margin-bottom: 8px;
+}
+.complete-sub {
+  font-size: 0.9rem;
+  color: #aaa;
+  margin-bottom: 28px;
+}
+.complete-detail {
+  background: #fdf6f0;
+  border-radius: 12px;
+  padding: 20px 24px;
+  margin-bottom: 28px;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.complete-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+.complete-label {
+  font-size: 0.82rem;
+  color: #aaa;
+  white-space: nowrap;
+}
+.complete-value {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-deep);
+  text-align: right;
+}
+.complete-message {
+  font-size: 1rem;
+  color: var(--color-text);
+  line-height: 1.8;
+  margin-bottom: 20px;
+}
+.complete-shop {
+  font-size: 0.85rem;
+  color: var(--color-accent);
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+
 /* ── 管理画面専用 ── */
 .admin-layout {
   max-width: 1060px;

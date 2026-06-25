@@ -347,10 +347,17 @@ document.addEventListener("DOMContentLoaded", async () => {
                     dateInput.dispatchEvent(new Event("change"));
                 } else { throw error; }
             } else {
-                showToast("ご予約が完了しました！ありがとうございます🐾", "success");
-                form.reset();
-                timeSelect.disabled = true;
-                timeSelect.innerHTML = '<option value="">先に予約日を選択してください</option>';
+                // 完了画面に切り替え
+                const timeLabel = timeSelect.options[timeSelect.selectedIndex]?.text || "";
+                const dateVal   = dateInput.value;
+                const [y, m, d] = dateVal.split("-");
+                const weekdays  = ["日","月","火","水","木","金","土"];
+                const dow       = weekdays[new Date(dateVal).getDay()];
+                document.getElementById("comp-dog").textContent  = document.getElementById("dog_name").value + "ちゃん";
+                document.getElementById("comp-date").textContent = `${y}年${Number(m)}月${Number(d)}日（${dow}）`;
+                document.getElementById("comp-time").textContent = timeLabel;
+                form.style.display = "none";
+                document.getElementById("complete-screen").style.display = "block";
                 window.scrollTo({ top: 0, behavior: "smooth" });
             }
         } catch (err) {
