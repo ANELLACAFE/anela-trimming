@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>管理画面 — ANELLA CAFE トリミング予約</title>
-    <link rel="stylesheet" href="style.css?v=20250627b">
+    <link rel="stylesheet" href="style.css?v=20250627c">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
@@ -85,8 +85,8 @@
 
             <!-- 定休日（曜日） -->
             <div class="schedule-card">
-                <h3>✂️ トリミングコース 受付不可曜日</h3>
-                <p style="font-size:0.88rem;color:#999;margin-bottom:16px;">チェックした曜日は<strong>トリミングコースの予約ができません</strong>。下の「シャンプーコース受付可能」と組み合わせることでシャンプーのみ受け付けることができます。どちらにもチェックしない場合は定休日（全コース不可）になります。</p>
+                <h3>✂️ トリミングコース 受付可能曜日</h3>
+                <p style="font-size:0.88rem;color:#999;margin-bottom:16px;">トリミングコースの予約を<strong>受け付ける曜日</strong>にチェックしてください。チェックのない曜日はトリミングコースが予約不可になります。</p>
                 <div class="weekday-grid">
                     <div class="weekday-toggle">
                         <input type="checkbox" id="wd-0" value="0">
@@ -123,7 +123,7 @@
             <!-- コース受付設定（曜日） -->
             <div class="schedule-card">
                 <h3>🛁 シャンプーコース 受付可能曜日</h3>
-                <p style="font-size:0.88rem;color:#999;margin-bottom:16px;">チェックした曜日は<strong>シャンプーコースの予約が可能</strong>になります。上の「トリミング受付不可」と組み合わせることで、その曜日をシャンプーのみ対応日として設定できます。</p>
+                <p style="font-size:0.88rem;color:#999;margin-bottom:16px;">シャンプーコースの予約を<strong>受け付ける曜日</strong>にチェックしてください。チェックのない曜日はシャンプーコースが予約不可になります。</p>
                 <div class="weekday-grid">
                     <div class="weekday-toggle">
                         <input type="checkbox" id="co-0" value="0">
@@ -779,12 +779,12 @@ async function loadScheduleSettings() {
         document.querySelectorAll("[id^='co-']").forEach(cb => { cb.checked = false; });
 
         data.forEach(row => {
-            if (row.type === "closed_weekday") {
+            if (row.type === "trimming_weekday") {
                 const cb = document.getElementById("wd-" + row.value);
                 if (cb) cb.checked = true;
             } else if (row.type === "closed_date") {
                 closedDateRecords.push({ id: row.id, value: row.value, note: row.note });
-            } else if (row.type === "shampoo_only_weekday") {
+            } else if (row.type === "shampoo_weekday") {
                 const cb = document.getElementById("co-" + row.value);
                 if (cb) cb.checked = true;
             }
@@ -802,26 +802,26 @@ document.getElementById("save-weekdays-btn").addEventListener("click", async () 
     btn.textContent = "保存中...";
     btn.disabled = true;
     try {
-        // 既存の closed_weekday を全削除
+        // 既存の trimming_weekday を全削除
         const { error: delErr } = await _supabase
             .from("schedule_settings")
             .delete()
-            .eq("type", "closed_weekday");
+            .eq("type", "trimming_weekday");
         if (delErr) throw delErr;
 
         // チェックされている曜日を挿入
         const checked = [...document.querySelectorAll(".weekday-toggle input:checked")];
         if (checked.length > 0) {
-            const inserts = checked.map(cb => ({ type: "closed_weekday", value: cb.value, note: "" }));
+            const inserts = checked.map(cb => ({ type: "trimming_weekday", value: cb.value, note: "" }));
             const { error: insErr } = await _supabase.from("schedule_settings").insert(inserts);
             if (insErr) throw insErr;
         }
-        showToast("定休日の設定を保存しました。");
+        showToast("トリミングコース受付可能曜日を保存しました。");
     } catch (err) {
         console.error(err);
         showToast("保存に失敗しました。", "error");
     } finally {
-        btn.textContent = "💾 曜日設定を保存";
+        btn.textContent = "💾 トリミング受付可能を保存";
         btn.disabled = false;
     }
 });
@@ -835,21 +835,21 @@ document.getElementById("save-course-weekdays-btn").addEventListener("click", as
         const { error: delErr } = await _supabase
             .from("schedule_settings")
             .delete()
-            .eq("type", "shampoo_only_weekday");
+            .eq("type", "shampoo_weekday");
         if (delErr) throw delErr;
 
         const checked = [...document.querySelectorAll("[id^='co-']:checked")];
         if (checked.length > 0) {
-            const inserts = checked.map(cb => ({ type: "shampoo_only_weekday", value: cb.value, note: "" }));
+            const inserts = checked.map(cb => ({ type: "shampoo_weekday", value: cb.value, note: "" }));
             const { error: insErr } = await _supabase.from("schedule_settings").insert(inserts);
             if (insErr) throw insErr;
         }
-        showToast("コース受付設定を保存しました。");
+        showToast("シャンプーコース受付可能曜日を保存しました。");
     } catch (err) {
         console.error(err);
         showToast("保存に失敗しました。", "error");
     } finally {
-        btn.textContent = "💾 コース設定を保存";
+        btn.textContent = "💾 シャンプー受付可能を保存";
         btn.disabled = false;
     }
 });
