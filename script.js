@@ -192,6 +192,8 @@ function isClosedDay(dateStr) {
     if (!dateStr) return false;
     if (closedDates.has(dateStr)) return true;
     const dow = new Date(dateStr + "T00:00:00").getDay();
+    // シャンプーのみ曜日は「定休日」ではなく営業日扱い
+    if (shampooOnlyWeekdays.has(dow)) return false;
     return closedWeekdays.has(dow);
 }
 
