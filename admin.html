@@ -809,8 +809,8 @@ document.getElementById("save-weekdays-btn").addEventListener("click", async () 
             .eq("type", "trimming_weekday");
         if (delErr) throw delErr;
 
-        // チェックされている曜日を挿入
-        const checked = [...document.querySelectorAll(".weekday-toggle input:checked")];
+        // チェックされている曜日を挿入（wd-* のみ対象）
+        const checked = [...document.querySelectorAll("[id^='wd-']:checked")];
         if (checked.length > 0) {
             const inserts = checked.map(cb => ({ type: "trimming_weekday", value: cb.value, note: "" }));
             const { error: insErr } = await _supabase.from("schedule_settings").insert(inserts);
