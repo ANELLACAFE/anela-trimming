@@ -276,6 +276,37 @@ input[type="file"] {
 #toast.success { background: var(--color-success); }
 #toast.error   { background: var(--color-error); }
 
+/* ── コース選択 ── */
+.course-select {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.course-option { cursor: pointer; }
+.course-option input[type="radio"] { display: none; }
+.course-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 18px 12px;
+  border: 2px solid #e8d5c4;
+  border-radius: 14px;
+  background: #fdf6f0;
+  transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+  text-align: center;
+}
+.course-option input:checked + .course-card {
+  border-color: var(--color-accent);
+  background: #fff8f0;
+  box-shadow: 0 0 0 3px rgba(189,162,134,0.2);
+}
+.course-icon { font-size: 1.8rem; }
+.course-name { font-size: 0.95rem; font-weight: 700; color: var(--color-deep); }
+.course-desc { font-size: 0.75rem; color: #aaa; line-height: 1.4; }
+.cal-day.shampoo-only .cal-day-sub { color: #2980b9; }
+.cal-day.shampoo-only { opacity: 0.5; cursor: not-allowed !important; }
+
 /* ── 過去情報自動入力バナー ── */
 .autofill-card {
   display: flex;

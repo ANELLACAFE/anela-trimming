@@ -194,6 +194,33 @@
                 </div>
             </div>
 
+            <!-- ── コース選択 ── -->
+            <div class="card">
+                <h2 class="section-heading">ご予約コース</h2>
+                <div class="form-group">
+                    <label>ご希望のコース<span class="required">必須</span></label>
+                    <div class="course-select">
+                        <label class="course-option">
+                            <input type="radio" name="course" value="trimming" required>
+                            <div class="course-card">
+                                <span class="course-icon">✂️</span>
+                                <span class="course-name">トリミングコース</span>
+                                <span class="course-desc">シャンプー＋カットをご希望の方</span>
+                            </div>
+                        </label>
+                        <label class="course-option">
+                            <input type="radio" name="course" value="shampoo">
+                            <div class="course-card">
+                                <span class="course-icon">🛁</span>
+                                <span class="course-name">シャンプーコース</span>
+                                <span class="course-desc">シャンプー・ブロー仕上げのみの方</span>
+                            </div>
+                        </label>
+                    </div>
+                    <p class="field-error" id="err-course">コースを選択してください。</p>
+                </div>
+            </div>
+
             <!-- ── カットの要望 ── -->
             <div class="card">
                 <h2 class="section-heading">カットのご要望</h2>

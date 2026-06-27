@@ -78,6 +78,10 @@ function validateForm() {
     if (!document.getElementById("reservation_time")?.value) {
         setError("reservation_time", true); valid = false;
     }
+    // コース選択
+    if (!document.querySelector('input[name="course"]:checked')) {
+        setError("course", true); valid = false;
+    }
     // 利用規約同意チェック
     if (!document.getElementById("terms_agree")?.checked) {
         setError("terms_agree", true); valid = false;
@@ -151,8 +155,9 @@ document.getElementById("autofill-no").addEventListener("click", () => {
 // ══════════════════════════════════
 // スケジュール設定を取得
 // ══════════════════════════════════
-let closedWeekdays = new Set(); // 0=日,1=月,...
-let closedDates    = new Set(); // "YYYY-MM-DD"
+let closedWeekdays    = new Set(); // 0=日,1=月,...
+let closedDates       = new Set(); // "YYYY-MM-DD"
+let shampooOnlyWeekdays = new Set(); // トリミング不可の曜日
 
 async function loadScheduleSettings() {
     try {
@@ -160,15 +165,26 @@ async function loadScheduleSettings() {
             .from("schedule_settings")
             .select("type, value");
         if (error) throw error;
-        closedWeekdays = new Set();
-        closedDates    = new Set();
+        closedWeekdays    = new Set();
+        closedDates       = new Set();
+        shampooOnlyWeekdays = new Set();
         data.forEach(row => {
-            if (row.type === "closed_weekday") closedWeekdays.add(Number(row.value));
-            if (row.type === "closed_date")    closedDates.add(row.value);
+            if (row.type === "closed_weekday")     closedWeekdays.add(Number(row.value));
+            if (row.type === "closed_date")        closedDates.add(row.value);
+            if (row.type === "shampoo_only_weekday") shampooOnlyWeekdays.add(Number(row.value));
         });
     } catch (err) {
         console.warn("スケジュール設定の取得に失敗しました。休業日チェックをスキップします。", err);
     }
+}
+
+function isShampooOnlyDay(dateStr) {
+    const dow = new Date(dateStr + "T00:00:00").getDay();
+    return shampooOnlyWeekdays.has(dow);
+}
+
+function getSelectedCourse() {
+    return document.querySelector('input[name="course"]:checked')?.value || "";
 }
 
 // 指定日が予約不可かどうか
@@ -242,16 +258,21 @@ function renderCalendar() {
         const dow = new Date(dateStr + "T00:00:00").getDay();
         const numClass = dow === 0 ? "style='color:#c0392b'" : dow === 6 ? "style='color:#2980b9'" : "";
 
+        const course = getSelectedCourse();
+        const isShampooOnly = isShampooOnlyDay(dateStr);
+        const trimmingBlocked = (course === "trimming" && isShampooOnly);
+
         let cls = "cal-day";
         let sub = "";
-        if (isSelected)    { cls += " selected"; sub = "▼ 選択中"; }
-        else if (isPast)   { cls += " past"; }
-        else if (isClosed) { cls += " closed"; sub = "定休日"; }
-        else if (isFull)   { cls += " full"; sub = "満席"; }
-        else               { cls += " available"; sub = "空きあり"; }
-        if (isToday)       { cls += " today"; }
+        if (isSelected)         { cls += " selected"; sub = "▼ 選択中"; }
+        else if (isPast)        { cls += " past"; }
+        else if (isClosed)      { cls += " closed"; sub = "定休日"; }
+        else if (isFull)        { cls += " full"; sub = "満席"; }
+        else if (trimmingBlocked) { cls += " shampoo-only"; sub = "シャンプーのみ"; }
+        else                    { cls += " available"; sub = "空きあり"; }
+        if (isToday)            { cls += " today"; }
 
-        const clickAttr = (!isPast && !isClosed && !isFull)
+        const clickAttr = (!isPast && !isClosed && !isFull && !trimmingBlocked)
             ? `onclick="calSelectDate('${dateStr}')"` : "";
 
         html += `<div class="${cls}" ${clickAttr}>
@@ -330,6 +351,19 @@ document.addEventListener("DOMContentLoaded", async () => {
     // スケジュール設定を先に読み込む
     await loadScheduleSettings();
 
+    // コース選択変更でカレンダー再描画
+    document.querySelectorAll('input[name="course"]').forEach(radio => {
+        radio.addEventListener("change", () => {
+            // シャンプーのみの日を選択済みの場合は選択解除
+            if (calSelectedDate && getSelectedCourse() === "trimming" && isShampooOnlyDay(calSelectedDate)) {
+                calSelectedDate = null;
+                dateInput.value = "";
+                document.getElementById("cal-selected-label").style.display = "none";
+            }
+            renderCalendar();
+        });
+    });
+
     // カレンダー初期化
     const now = new Date();
     calYear  = now.getFullYear();
@@ -401,6 +435,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             flea_tick_image:     fleaImgUrl,
             heartworm_prevent:   document.getElementById("heartworm_prevent").value.trim() || "なし",
             heartworm_image:     heartwormImgUrl,
+            course:              document.querySelector('input[name="course"]:checked')?.value || "",
             booking_request:     document.getElementById("booking_request").value.trim(),
             reservation_date:    dateInput.value,
             reservation_time:    timeSelect.value,

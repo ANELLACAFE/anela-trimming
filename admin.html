@@ -120,6 +120,43 @@
                 <button class="schedule-save-btn" id="save-weekdays-btn">💾 曜日設定を保存</button>
             </div>
 
+            <!-- コース受付設定（曜日） -->
+            <div class="schedule-card">
+                <h3>✂️ コース受付設定（曜日）</h3>
+                <p style="font-size:0.88rem;color:#999;margin-bottom:16px;">チェックした曜日は<strong>シャンプーコースのみ</strong>の受付になります（トリミングコース不可）。</p>
+                <div class="weekday-grid">
+                    <div class="weekday-toggle">
+                        <input type="checkbox" id="co-0" value="0">
+                        <label for="co-0">日<span class="day-en">Sun</span></label>
+                    </div>
+                    <div class="weekday-toggle">
+                        <input type="checkbox" id="co-1" value="1">
+                        <label for="co-1">月<span class="day-en">Mon</span></label>
+                    </div>
+                    <div class="weekday-toggle">
+                        <input type="checkbox" id="co-2" value="2">
+                        <label for="co-2">火<span class="day-en">Tue</span></label>
+                    </div>
+                    <div class="weekday-toggle">
+                        <input type="checkbox" id="co-3" value="3">
+                        <label for="co-3">水<span class="day-en">Wed</span></label>
+                    </div>
+                    <div class="weekday-toggle">
+                        <input type="checkbox" id="co-4" value="4">
+                        <label for="co-4">木<span class="day-en">Thu</span></label>
+                    </div>
+                    <div class="weekday-toggle">
+                        <input type="checkbox" id="co-5" value="5">
+                        <label for="co-5">金<span class="day-en">Fri</span></label>
+                    </div>
+                    <div class="weekday-toggle">
+                        <input type="checkbox" id="co-6" value="6">
+                        <label for="co-6">土<span class="day-en">Sat</span></label>
+                    </div>
+                </div>
+                <button class="schedule-save-btn" id="save-course-weekdays-btn">💾 コース設定を保存</button>
+            </div>
+
             <!-- 臨時休業日 -->
             <div class="schedule-card">
                 <h3>🚫 臨時休業日の追加</h3>
@@ -398,6 +435,7 @@ const KARTE_EDIT_FIELDS = [
     { key: "mixed_vaccine",     label: "混合ワクチン",         type: "select", options: [{ value: "あり", text: "接種済み" }, { value: "当日持参", text: "当日持参" }] },
     { key: "flea_tick_prevent",  label: "ノミ・ダニ予防",       type: "text" },
     { key: "heartworm_prevent",  label: "フィラリア予防",       type: "text" },
+    { key: "course",             label: "コース",               type: "select", options: [{ value: "trimming", text: "✂️ トリミングコース" }, { value: "shampoo", text: "🛁 シャンプーコース" }] },
     { key: "booking_request",    label: "カットのご要望",       type: "text" },
 ];
 
@@ -445,6 +483,7 @@ function setModalMode(mode) {
         const items = [
             { label: "予約日",              value: res.reservation_date },
             { label: "予約時間枠",          value: label },
+            { label: "コース",              value: res.course === "trimming" ? "✂️ トリミングコース" : res.course === "shampoo" ? "🛁 シャンプーコース" : res.course },
             { label: "飼い主氏名",          value: res.owner_name },
             { label: "フリガナ",            value: res.owner_kana },
             { label: "電話番号",            value: res.phone },
@@ -736,12 +775,18 @@ async function loadScheduleSettings() {
         });
         closedDateRecords = [];
 
+        // コース設定チェックボックスを復元
+        document.querySelectorAll("[id^='co-']").forEach(cb => { cb.checked = false; });
+
         data.forEach(row => {
             if (row.type === "closed_weekday") {
                 const cb = document.getElementById("wd-" + row.value);
                 if (cb) cb.checked = true;
             } else if (row.type === "closed_date") {
                 closedDateRecords.push({ id: row.id, value: row.value, note: row.note });
+            } else if (row.type === "shampoo_only_weekday") {
+                const cb = document.getElementById("co-" + row.value);
+                if (cb) cb.checked = true;
             }
         });
         renderClosedDateList();
@@ -777,6 +822,34 @@ document.getElementById("save-weekdays-btn").addEventListener("click", async () 
         showToast("保存に失敗しました。", "error");
     } finally {
         btn.textContent = "💾 曜日設定を保存";
+        btn.disabled = false;
+    }
+});
+
+// コース受付設定を保存
+document.getElementById("save-course-weekdays-btn").addEventListener("click", async () => {
+    const btn = document.getElementById("save-course-weekdays-btn");
+    btn.textContent = "保存中...";
+    btn.disabled = true;
+    try {
+        const { error: delErr } = await _supabase
+            .from("schedule_settings")
+            .delete()
+            .eq("type", "shampoo_only_weekday");
+        if (delErr) throw delErr;
+
+        const checked = [...document.querySelectorAll("[id^='co-']:checked")];
+        if (checked.length > 0) {
+            const inserts = checked.map(cb => ({ type: "shampoo_only_weekday", value: cb.value, note: "" }));
+            const { error: insErr } = await _supabase.from("schedule_settings").insert(inserts);
+            if (insErr) throw insErr;
+        }
+        showToast("コース受付設定を保存しました。");
+    } catch (err) {
+        console.error(err);
+        showToast("保存に失敗しました。", "error");
+    } finally {
+        btn.textContent = "💾 コース設定を保存";
         btn.disabled = false;
     }
 });
