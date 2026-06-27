@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>管理画面 — ANELLA CAFE トリミング予約</title>
-    <link rel="stylesheet" href="style.css?v=20250627">
+    <link rel="stylesheet" href="style.css?v=20250627b">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
@@ -85,8 +85,8 @@
 
             <!-- 定休日（曜日） -->
             <div class="schedule-card">
-                <h3>🗓 定休日の設定（曜日）</h3>
-                <p style="font-size:0.88rem;color:#999;margin-bottom:16px;">休みにする曜日を選んでください。赤くなった曜日が定休日として予約不可になります。</p>
+                <h3>🚫 定休日・完全休業（曜日）</h3>
+                <p style="font-size:0.88rem;color:#999;margin-bottom:16px;">全スタッフがお休みで<strong>予約を一切受け付けない</strong>曜日を選んでください。カレンダーに「定休日」と表示されます。</p>
                 <div class="weekday-grid">
                     <div class="weekday-toggle">
                         <input type="checkbox" id="wd-0" value="0">
@@ -117,13 +117,13 @@
                         <label for="wd-6">土<span class="day-en">Sat</span></label>
                     </div>
                 </div>
-                <button class="schedule-save-btn" id="save-weekdays-btn">💾 曜日設定を保存</button>
+                <button class="schedule-save-btn" id="save-weekdays-btn">💾 定休日を保存</button>
             </div>
 
             <!-- コース受付設定（曜日） -->
             <div class="schedule-card">
-                <h3>✂️ コース受付設定（曜日）</h3>
-                <p style="font-size:0.88rem;color:#999;margin-bottom:16px;">チェックした曜日は<strong>シャンプーコースのみ</strong>の受付になります（トリミングコース不可）。</p>
+                <h3>🛁 シャンプーコースのみ受付（曜日）</h3>
+                <p style="font-size:0.88rem;color:#999;margin-bottom:16px;">チェックした曜日は<strong>シャンプーコースのみ</strong>の受付になります。トリミングコースはカレンダーで選択不可になります。</p>
                 <div class="weekday-grid">
                     <div class="weekday-toggle">
                         <input type="checkbox" id="co-0" value="0">
@@ -154,7 +154,7 @@
                         <label for="co-6">土<span class="day-en">Sat</span></label>
                     </div>
                 </div>
-                <button class="schedule-save-btn" id="save-course-weekdays-btn">💾 コース設定を保存</button>
+                <button class="schedule-save-btn" id="save-course-weekdays-btn">💾 シャンプーのみ設定を保存</button>
             </div>
 
             <!-- 臨時休業日 -->
