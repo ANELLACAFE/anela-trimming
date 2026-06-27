@@ -40,6 +40,21 @@
                     <p class="field-error" id="err-phone">電話番号を正しく入力してください（数字のみ、10〜11桁）。</p>
                 </div>
 
+                <!-- 過去情報呼び出しバナー -->
+                <div id="autofill-banner" style="display:none;">
+                    <div class="autofill-card">
+                        <div class="autofill-icon">🐾</div>
+                        <div class="autofill-body">
+                            <p class="autofill-title">前回のご予約情報が見つかりました</p>
+                            <p class="autofill-name" id="autofill-name"></p>
+                        </div>
+                        <div class="autofill-actions">
+                            <button type="button" id="autofill-yes" class="autofill-btn-yes">自動入力する</button>
+                            <button type="button" id="autofill-no"  class="autofill-btn-no">しない</button>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="form-group">
                     <label for="address">ご住所（番地まで）<span class="required">必須</span></label>
                     <input type="text" id="address" required placeholder="例：埼玉県さいたま市南区南浦和1-2-3（都道府県〜番地までご入力ください）">

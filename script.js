@@ -86,6 +86,69 @@ function validateForm() {
 }
 
 // ══════════════════════════════════
+// 電話番号による過去情報自動入力
+// ══════════════════════════════════
+let _autofillData = null;
+
+document.getElementById("phone").addEventListener("blur", async () => {
+    const phone = document.getElementById("phone").value.replace(/[-\s]/g, "");
+    if (!/^\d{10,11}$/.test(phone)) return;
+
+    const { data } = await _supabase
+        .from("reservations")
+        .select("*")
+        .eq("phone", phone)
+        .order("created_at", { ascending: false })
+        .limit(1);
+
+    if (!data || data.length === 0) return;
+
+    _autofillData = data[0];
+    document.getElementById("autofill-name").textContent =
+        `${_autofillData.owner_name} 様 / ${_autofillData.dog_name}ちゃん`;
+    document.getElementById("autofill-banner").style.display = "block";
+});
+
+document.getElementById("autofill-yes").addEventListener("click", () => {
+    if (!_autofillData) return;
+    const d = _autofillData;
+
+    const setVal = (id, val) => { const el = document.getElementById(id); if (el && val) el.value = val; };
+    const setRadio = (name, val) => {
+        const el = document.querySelector(`input[name="${name}"][value="${val}"]`);
+        if (el) el.checked = true;
+    };
+
+    setVal("owner_name",       d.owner_name);
+    setVal("owner_kana",       d.owner_kana);
+    setVal("address",          d.address);
+    setVal("emergency_phone",  d.emergency_phone);
+    setVal("trigger_text",     d.trigger_text);
+    setVal("dog_name",         d.dog_name);
+    setVal("breed",            d.breed);
+    setVal("dog_birthday",     d.dog_birthday);
+    setVal("regular_hospital", d.regular_hospital);
+    setVal("allergies",        d.allergies);
+    setVal("favorite_spots",   d.favorite_spots);
+    setVal("dislike_spots",    d.dislike_spots);
+    setVal("medical_history",  d.medical_history);
+    setVal("flea_tick_prevent",d.flea_tick_prevent);
+    setVal("heartworm_prevent",d.heartworm_prevent);
+    setRadio("gender",         d.gender);
+    setRadio("spay_neuter",    d.spay_neuter);
+    setRadio("rabies_vaccine", d.rabies_vaccine);
+    setRadio("mixed_vaccine",  d.mixed_vaccine);
+
+    document.getElementById("autofill-banner").style.display = "none";
+    showToast("前回の情報を入力しました。内容をご確認ください。", "success");
+});
+
+document.getElementById("autofill-no").addEventListener("click", () => {
+    document.getElementById("autofill-banner").style.display = "none";
+    _autofillData = null;
+});
+
+// ══════════════════════════════════
 // スケジュール設定を取得
 // ══════════════════════════════════
 let closedWeekdays = new Set(); // 0=日,1=月,...
