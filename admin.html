@@ -85,8 +85,8 @@
 
             <!-- 定休日（曜日） -->
             <div class="schedule-card">
-                <h3>🚫 定休日・完全休業（曜日）</h3>
-                <p style="font-size:0.88rem;color:#999;margin-bottom:16px;">全スタッフがお休みで<strong>予約を一切受け付けない</strong>曜日を選んでください。カレンダーに「定休日」と表示されます。</p>
+                <h3>✂️ トリミングコース 受付不可曜日</h3>
+                <p style="font-size:0.88rem;color:#999;margin-bottom:16px;">チェックした曜日は<strong>トリミングコースの予約ができません</strong>。下の「シャンプーコース受付可能」と組み合わせることでシャンプーのみ受け付けることができます。どちらにもチェックしない場合は定休日（全コース不可）になります。</p>
                 <div class="weekday-grid">
                     <div class="weekday-toggle">
                         <input type="checkbox" id="wd-0" value="0">
@@ -117,13 +117,13 @@
                         <label for="wd-6">土<span class="day-en">Sat</span></label>
                     </div>
                 </div>
-                <button class="schedule-save-btn" id="save-weekdays-btn">💾 定休日を保存</button>
+                <button class="schedule-save-btn" id="save-weekdays-btn">💾 トリミング受付不可を保存</button>
             </div>
 
             <!-- コース受付設定（曜日） -->
             <div class="schedule-card">
-                <h3>🛁 シャンプーコースのみ受付（曜日）</h3>
-                <p style="font-size:0.88rem;color:#999;margin-bottom:16px;">チェックした曜日は<strong>シャンプーコースのみ</strong>の受付になります。トリミングコースはカレンダーで選択不可になります。</p>
+                <h3>🛁 シャンプーコース 受付可能曜日</h3>
+                <p style="font-size:0.88rem;color:#999;margin-bottom:16px;">チェックした曜日は<strong>シャンプーコースの予約が可能</strong>になります。上の「トリミング受付不可」と組み合わせることで、その曜日をシャンプーのみ対応日として設定できます。</p>
                 <div class="weekday-grid">
                     <div class="weekday-toggle">
                         <input type="checkbox" id="co-0" value="0">
@@ -154,7 +154,7 @@
                         <label for="co-6">土<span class="day-en">Sat</span></label>
                     </div>
                 </div>
-                <button class="schedule-save-btn" id="save-course-weekdays-btn">💾 シャンプーのみ設定を保存</button>
+                <button class="schedule-save-btn" id="save-course-weekdays-btn">💾 シャンプー受付可能を保存</button>
             </div>
 
             <!-- 臨時休業日 -->
