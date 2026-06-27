@@ -276,6 +276,79 @@ input[type="file"] {
 #toast.success { background: var(--color-success); }
 #toast.error   { background: var(--color-error); }
 
+/* ── 利用規約 ── */
+.terms-box {
+  background: #fdf6f0;
+  border: 1px solid #e8d5c4;
+  border-radius: 12px;
+  padding: 20px 24px;
+  max-height: 320px;
+  overflow-y: auto;
+  font-size: 0.82rem;
+  line-height: 1.75;
+  color: var(--color-text);
+  margin-bottom: 20px;
+}
+.terms-title {
+  font-weight: 700;
+  font-size: 0.92rem;
+  color: var(--color-deep);
+  margin-bottom: 14px;
+  text-align: center;
+}
+.terms-list {
+  padding-left: 1.4em;
+  margin: 0 0 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.terms-cancel {
+  border-top: 1px solid #e8d5c4;
+  padding-top: 14px;
+  margin-top: 14px;
+}
+.terms-cancel-title {
+  font-weight: 700;
+  font-size: 0.88rem;
+  color: var(--color-deep);
+  margin-bottom: 10px;
+}
+.terms-cancel-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+.terms-cancel-table td {
+  padding: 5px 8px;
+  border-bottom: 1px solid #eee;
+}
+.terms-cancel-table td:last-child {
+  text-align: right;
+  white-space: nowrap;
+  color: #c0392b;
+}
+.terms-agree-group {
+  margin-top: 4px;
+}
+.terms-agree-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--color-deep);
+}
+.terms-agree-label input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  margin-top: 2px;
+  accent-color: var(--color-accent);
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
 /* ── 予約完了画面 ── */
 .complete-card {
   background: #fff;
@@ -333,6 +406,30 @@ input[type="file"] {
   color: var(--color-text);
   line-height: 1.8;
   margin-bottom: 20px;
+}
+.complete-cancel {
+  background: #fff8f5;
+  border: 1px solid #f0ddd0;
+  border-radius: 10px;
+  padding: 14px 20px;
+  margin-bottom: 24px;
+  font-size: 0.85rem;
+  color: var(--color-text);
+  text-align: left;
+}
+.complete-cancel-title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #aaa;
+  margin-bottom: 8px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.complete-cancel p {
+  margin: 4px 0;
+}
+.complete-cancel strong {
+  color: #c0392b;
 }
 .complete-shop {
   font-size: 0.85rem;

@@ -78,6 +78,10 @@ function validateForm() {
     if (!document.getElementById("reservation_time")?.value) {
         setError("reservation_time", true); valid = false;
     }
+    // 利用規約同意チェック
+    if (!document.getElementById("terms_agree")?.checked) {
+        setError("terms_agree", true); valid = false;
+    }
     return valid;
 }
 
