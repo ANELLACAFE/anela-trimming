@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>管理画面 — ANELLA CAFE トリミング予約</title>
-    <link rel="stylesheet" href="style.css?v=20250704a">
+    <link rel="stylesheet" href="style.css?v=20250704b">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
@@ -84,84 +84,10 @@
         <!-- ══ タブ②：営業日設定 ══ -->
         <div class="tab-panel" id="tab-schedule">
 
-            <!-- 定休日（曜日） -->
+            <!-- 受付スロット設定 -->
             <div class="schedule-card">
-                <h3>✂️ トリミングコース 受付可能曜日</h3>
-                <p style="font-size:0.88rem;color:#999;margin-bottom:16px;">トリミングコースの予約を<strong>受け付ける曜日</strong>にチェックしてください。チェックのない曜日はトリミングコースが予約不可になります。</p>
-                <div class="weekday-grid">
-                    <div class="weekday-toggle">
-                        <input type="checkbox" id="wd-0" value="0">
-                        <label for="wd-0">日<span class="day-en">Sun</span></label>
-                    </div>
-                    <div class="weekday-toggle">
-                        <input type="checkbox" id="wd-1" value="1">
-                        <label for="wd-1">月<span class="day-en">Mon</span></label>
-                    </div>
-                    <div class="weekday-toggle">
-                        <input type="checkbox" id="wd-2" value="2">
-                        <label for="wd-2">火<span class="day-en">Tue</span></label>
-                    </div>
-                    <div class="weekday-toggle">
-                        <input type="checkbox" id="wd-3" value="3">
-                        <label for="wd-3">水<span class="day-en">Wed</span></label>
-                    </div>
-                    <div class="weekday-toggle">
-                        <input type="checkbox" id="wd-4" value="4">
-                        <label for="wd-4">木<span class="day-en">Thu</span></label>
-                    </div>
-                    <div class="weekday-toggle">
-                        <input type="checkbox" id="wd-5" value="5">
-                        <label for="wd-5">金<span class="day-en">Fri</span></label>
-                    </div>
-                    <div class="weekday-toggle">
-                        <input type="checkbox" id="wd-6" value="6">
-                        <label for="wd-6">土<span class="day-en">Sat</span></label>
-                    </div>
-                </div>
-                <button class="schedule-save-btn" id="save-weekdays-btn">💾 トリミング受付可能を保存</button>
-            </div>
-
-            <!-- コース受付設定（曜日） -->
-            <div class="schedule-card">
-                <h3>🛁 シャンプーコース 受付可能曜日</h3>
-                <p style="font-size:0.88rem;color:#999;margin-bottom:16px;">シャンプーコースの予約を<strong>受け付ける曜日</strong>にチェックしてください。チェックのない曜日はシャンプーコースが予約不可になります。</p>
-                <div class="weekday-grid">
-                    <div class="weekday-toggle">
-                        <input type="checkbox" id="co-0" value="0">
-                        <label for="co-0">日<span class="day-en">Sun</span></label>
-                    </div>
-                    <div class="weekday-toggle">
-                        <input type="checkbox" id="co-1" value="1">
-                        <label for="co-1">月<span class="day-en">Mon</span></label>
-                    </div>
-                    <div class="weekday-toggle">
-                        <input type="checkbox" id="co-2" value="2">
-                        <label for="co-2">火<span class="day-en">Tue</span></label>
-                    </div>
-                    <div class="weekday-toggle">
-                        <input type="checkbox" id="co-3" value="3">
-                        <label for="co-3">水<span class="day-en">Wed</span></label>
-                    </div>
-                    <div class="weekday-toggle">
-                        <input type="checkbox" id="co-4" value="4">
-                        <label for="co-4">木<span class="day-en">Thu</span></label>
-                    </div>
-                    <div class="weekday-toggle">
-                        <input type="checkbox" id="co-5" value="5">
-                        <label for="co-5">金<span class="day-en">Fri</span></label>
-                    </div>
-                    <div class="weekday-toggle">
-                        <input type="checkbox" id="co-6" value="6">
-                        <label for="co-6">土<span class="day-en">Sat</span></label>
-                    </div>
-                </div>
-                <button class="schedule-save-btn" id="save-course-weekdays-btn">💾 シャンプー受付可能を保存</button>
-            </div>
-
-            <!-- スロット別受付停止 -->
-            <div class="schedule-card">
-                <h3>⏰ スロット別受付停止</h3>
-                <p style="font-size:0.88rem;color:#999;margin-bottom:16px;">特定の曜日の特定の時間枠だけ受付を停止します。<strong>停止したいスロットにチェック</strong>してください。（曜日設定で受付不可の曜日には影響しません）</p>
+                <h3>✂️🛁 受付スロット設定</h3>
+                <p style="font-size:0.88rem;color:#999;margin-bottom:16px;"><strong>受付する曜日・時間枠・コースにチェック</strong>を入れてください。チェックのある枠のみ予約を受け付けます。</p>
                 <div style="overflow-x:auto;">
                 <table class="slot-table">
                     <thead>
@@ -171,61 +97,61 @@
                             <th colspan="2" class="slot-th-time">15:00〜18:00</th>
                         </tr>
                         <tr>
-                            <th class="slot-th-course">✂️ トリミング<br>停止</th>
-                            <th class="slot-th-course">🛁 シャンプー<br>停止</th>
-                            <th class="slot-th-course">✂️ トリミング<br>停止</th>
-                            <th class="slot-th-course">🛁 シャンプー<br>停止</th>
+                            <th class="slot-th-course">✂️ トリミング<br>受付</th>
+                            <th class="slot-th-course">🛁 シャンプー<br>受付</th>
+                            <th class="slot-th-course">✂️ トリミング<br>受付</th>
+                            <th class="slot-th-course">🛁 シャンプー<br>受付</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr>
                             <td class="slot-day-label" style="color:#c0392b;">日</td>
-                            <td class="slot-cell"><input type="checkbox" id="ts-0-11:00" value="0-11:00"></td>
-                            <td class="slot-cell"><input type="checkbox" id="ss-0-11:00" value="0-11:00"></td>
-                            <td class="slot-cell"><input type="checkbox" id="ts-0-15:00" value="0-15:00"></td>
-                            <td class="slot-cell"><input type="checkbox" id="ss-0-15:00" value="0-15:00"></td>
+                            <td class="slot-cell"><input type="checkbox" id="slot-t-0-11:00" value="0-11:00"></td>
+                            <td class="slot-cell"><input type="checkbox" id="slot-s-0-11:00" value="0-11:00"></td>
+                            <td class="slot-cell"><input type="checkbox" id="slot-t-0-15:00" value="0-15:00"></td>
+                            <td class="slot-cell"><input type="checkbox" id="slot-s-0-15:00" value="0-15:00"></td>
                         </tr>
                         <tr>
                             <td class="slot-day-label">月</td>
-                            <td class="slot-cell"><input type="checkbox" id="ts-1-11:00" value="1-11:00"></td>
-                            <td class="slot-cell"><input type="checkbox" id="ss-1-11:00" value="1-11:00"></td>
-                            <td class="slot-cell"><input type="checkbox" id="ts-1-15:00" value="1-15:00"></td>
-                            <td class="slot-cell"><input type="checkbox" id="ss-1-15:00" value="1-15:00"></td>
+                            <td class="slot-cell"><input type="checkbox" id="slot-t-1-11:00" value="1-11:00"></td>
+                            <td class="slot-cell"><input type="checkbox" id="slot-s-1-11:00" value="1-11:00"></td>
+                            <td class="slot-cell"><input type="checkbox" id="slot-t-1-15:00" value="1-15:00"></td>
+                            <td class="slot-cell"><input type="checkbox" id="slot-s-1-15:00" value="1-15:00"></td>
                         </tr>
                         <tr>
                             <td class="slot-day-label">火</td>
-                            <td class="slot-cell"><input type="checkbox" id="ts-2-11:00" value="2-11:00"></td>
-                            <td class="slot-cell"><input type="checkbox" id="ss-2-11:00" value="2-11:00"></td>
-                            <td class="slot-cell"><input type="checkbox" id="ts-2-15:00" value="2-15:00"></td>
-                            <td class="slot-cell"><input type="checkbox" id="ss-2-15:00" value="2-15:00"></td>
+                            <td class="slot-cell"><input type="checkbox" id="slot-t-2-11:00" value="2-11:00"></td>
+                            <td class="slot-cell"><input type="checkbox" id="slot-s-2-11:00" value="2-11:00"></td>
+                            <td class="slot-cell"><input type="checkbox" id="slot-t-2-15:00" value="2-15:00"></td>
+                            <td class="slot-cell"><input type="checkbox" id="slot-s-2-15:00" value="2-15:00"></td>
                         </tr>
                         <tr>
                             <td class="slot-day-label">水</td>
-                            <td class="slot-cell"><input type="checkbox" id="ts-3-11:00" value="3-11:00"></td>
-                            <td class="slot-cell"><input type="checkbox" id="ss-3-11:00" value="3-11:00"></td>
-                            <td class="slot-cell"><input type="checkbox" id="ts-3-15:00" value="3-15:00"></td>
-                            <td class="slot-cell"><input type="checkbox" id="ss-3-15:00" value="3-15:00"></td>
+                            <td class="slot-cell"><input type="checkbox" id="slot-t-3-11:00" value="3-11:00"></td>
+                            <td class="slot-cell"><input type="checkbox" id="slot-s-3-11:00" value="3-11:00"></td>
+                            <td class="slot-cell"><input type="checkbox" id="slot-t-3-15:00" value="3-15:00"></td>
+                            <td class="slot-cell"><input type="checkbox" id="slot-s-3-15:00" value="3-15:00"></td>
                         </tr>
                         <tr>
                             <td class="slot-day-label">木</td>
-                            <td class="slot-cell"><input type="checkbox" id="ts-4-11:00" value="4-11:00"></td>
-                            <td class="slot-cell"><input type="checkbox" id="ss-4-11:00" value="4-11:00"></td>
-                            <td class="slot-cell"><input type="checkbox" id="ts-4-15:00" value="4-15:00"></td>
-                            <td class="slot-cell"><input type="checkbox" id="ss-4-15:00" value="4-15:00"></td>
+                            <td class="slot-cell"><input type="checkbox" id="slot-t-4-11:00" value="4-11:00"></td>
+                            <td class="slot-cell"><input type="checkbox" id="slot-s-4-11:00" value="4-11:00"></td>
+                            <td class="slot-cell"><input type="checkbox" id="slot-t-4-15:00" value="4-15:00"></td>
+                            <td class="slot-cell"><input type="checkbox" id="slot-s-4-15:00" value="4-15:00"></td>
                         </tr>
                         <tr>
                             <td class="slot-day-label">金</td>
-                            <td class="slot-cell"><input type="checkbox" id="ts-5-11:00" value="5-11:00"></td>
-                            <td class="slot-cell"><input type="checkbox" id="ss-5-11:00" value="5-11:00"></td>
-                            <td class="slot-cell"><input type="checkbox" id="ts-5-15:00" value="5-15:00"></td>
-                            <td class="slot-cell"><input type="checkbox" id="ss-5-15:00" value="5-15:00"></td>
+                            <td class="slot-cell"><input type="checkbox" id="slot-t-5-11:00" value="5-11:00"></td>
+                            <td class="slot-cell"><input type="checkbox" id="slot-s-5-11:00" value="5-11:00"></td>
+                            <td class="slot-cell"><input type="checkbox" id="slot-t-5-15:00" value="5-15:00"></td>
+                            <td class="slot-cell"><input type="checkbox" id="slot-s-5-15:00" value="5-15:00"></td>
                         </tr>
                         <tr>
                             <td class="slot-day-label" style="color:#2980b9;">土</td>
-                            <td class="slot-cell"><input type="checkbox" id="ts-6-11:00" value="6-11:00"></td>
-                            <td class="slot-cell"><input type="checkbox" id="ss-6-11:00" value="6-11:00"></td>
-                            <td class="slot-cell"><input type="checkbox" id="ts-6-15:00" value="6-15:00"></td>
-                            <td class="slot-cell"><input type="checkbox" id="ss-6-15:00" value="6-15:00"></td>
+                            <td class="slot-cell"><input type="checkbox" id="slot-t-6-11:00" value="6-11:00"></td>
+                            <td class="slot-cell"><input type="checkbox" id="slot-s-6-11:00" value="6-11:00"></td>
+                            <td class="slot-cell"><input type="checkbox" id="slot-t-6-15:00" value="6-15:00"></td>
+                            <td class="slot-cell"><input type="checkbox" id="slot-s-6-15:00" value="6-15:00"></td>
                         </tr>
                     </tbody>
                 </table>
@@ -873,33 +799,19 @@ async function loadScheduleSettings() {
             .order("created_at", { ascending: true });
         if (error) throw error;
 
-        // 曜日チェックボックスを復元
-        document.querySelectorAll(".weekday-toggle input[type='checkbox']").forEach(cb => {
-            cb.checked = false;
-        });
+        // スロットチェックボックスをリセット
+        document.querySelectorAll("[id^='slot-']").forEach(cb => { cb.checked = false; });
         closedDateRecords = [];
 
-        // コース設定チェックボックスを復元
-        document.querySelectorAll("[id^='co-']").forEach(cb => { cb.checked = false; });
-
-        // スロットチェックボックスをリセット
-        document.querySelectorAll("[id^='ts-'], [id^='ss-']").forEach(cb => { cb.checked = false; });
-
         data.forEach(row => {
-            if (row.type === "trimming_weekday") {
-                const cb = document.getElementById("wd-" + row.value);
+            if (row.type === "trimming_slot_open") {
+                const cb = document.getElementById("slot-t-" + row.value);
+                if (cb) cb.checked = true;
+            } else if (row.type === "shampoo_slot_open") {
+                const cb = document.getElementById("slot-s-" + row.value);
                 if (cb) cb.checked = true;
             } else if (row.type === "closed_date") {
                 closedDateRecords.push({ id: row.id, value: row.value, note: row.note });
-            } else if (row.type === "shampoo_weekday") {
-                const cb = document.getElementById("co-" + row.value);
-                if (cb) cb.checked = true;
-            } else if (row.type === "trimming_slot_closed") {
-                const cb = document.getElementById("ts-" + row.value);
-                if (cb) cb.checked = true;
-            } else if (row.type === "shampoo_slot_closed") {
-                const cb = document.getElementById("ss-" + row.value);
-                if (cb) cb.checked = true;
             }
         });
         renderClosedDateList();
@@ -908,64 +820,6 @@ async function loadScheduleSettings() {
         showToast("スケジュール設定の読み込みに失敗しました。", "error");
     }
 }
-
-// 曜日設定を保存（全削除→再挿入）
-document.getElementById("save-weekdays-btn").addEventListener("click", async () => {
-    const btn = document.getElementById("save-weekdays-btn");
-    btn.textContent = "保存中...";
-    btn.disabled = true;
-    try {
-        // 既存の trimming_weekday を全削除
-        const { error: delErr } = await _supabase
-            .from("schedule_settings")
-            .delete()
-            .eq("type", "trimming_weekday");
-        if (delErr) throw delErr;
-
-        // チェックされている曜日を挿入（wd-* のみ対象）
-        const checked = [...document.querySelectorAll("[id^='wd-']:checked")];
-        if (checked.length > 0) {
-            const inserts = checked.map(cb => ({ type: "trimming_weekday", value: cb.value, note: "" }));
-            const { error: insErr } = await _supabase.from("schedule_settings").insert(inserts);
-            if (insErr) throw insErr;
-        }
-        showToast("トリミングコース受付可能曜日を保存しました。");
-    } catch (err) {
-        console.error(err);
-        showToast("保存に失敗しました。", "error");
-    } finally {
-        btn.textContent = "💾 トリミング受付可能を保存";
-        btn.disabled = false;
-    }
-});
-
-// コース受付設定を保存
-document.getElementById("save-course-weekdays-btn").addEventListener("click", async () => {
-    const btn = document.getElementById("save-course-weekdays-btn");
-    btn.textContent = "保存中...";
-    btn.disabled = true;
-    try {
-        const { error: delErr } = await _supabase
-            .from("schedule_settings")
-            .delete()
-            .eq("type", "shampoo_weekday");
-        if (delErr) throw delErr;
-
-        const checked = [...document.querySelectorAll("[id^='co-']:checked")];
-        if (checked.length > 0) {
-            const inserts = checked.map(cb => ({ type: "shampoo_weekday", value: cb.value, note: "" }));
-            const { error: insErr } = await _supabase.from("schedule_settings").insert(inserts);
-            if (insErr) throw insErr;
-        }
-        showToast("シャンプーコース受付可能曜日を保存しました。");
-    } catch (err) {
-        console.error(err);
-        showToast("保存に失敗しました。", "error");
-    } finally {
-        btn.textContent = "💾 シャンプー受付可能を保存";
-        btn.disabled = false;
-    }
-});
 
 // 臨時休業日を追加
 document.getElementById("add-closed-date-btn").addEventListener("click", async () => {
@@ -1032,23 +886,23 @@ window.removeClosedDate = async function(id) {
 };
 
 // ══════════════════════════════════
-// スロット別受付停止設定
+// 受付スロット設定
 // ══════════════════════════════════
 document.getElementById("save-slot-btn").addEventListener("click", async () => {
     const btn = document.getElementById("save-slot-btn");
     btn.textContent = "保存中...";
     btn.disabled = true;
     try {
-        const { error: d1 } = await _supabase.from("schedule_settings").delete().eq("type", "trimming_slot_closed");
+        const { error: d1 } = await _supabase.from("schedule_settings").delete().eq("type", "trimming_slot_open");
         if (d1) throw d1;
-        const { error: d2 } = await _supabase.from("schedule_settings").delete().eq("type", "shampoo_slot_closed");
+        const { error: d2 } = await _supabase.from("schedule_settings").delete().eq("type", "shampoo_slot_open");
         if (d2) throw d2;
 
-        const tsChecked = [...document.querySelectorAll("[id^='ts-']:checked")];
-        const ssChecked = [...document.querySelectorAll("[id^='ss-']:checked")];
+        const tChecked = [...document.querySelectorAll("[id^='slot-t-']:checked")];
+        const sChecked = [...document.querySelectorAll("[id^='slot-s-']:checked")];
         const inserts = [
-            ...tsChecked.map(cb => ({ type: "trimming_slot_closed", value: cb.value, note: "" })),
-            ...ssChecked.map(cb => ({ type: "shampoo_slot_closed",  value: cb.value, note: "" })),
+            ...tChecked.map(cb => ({ type: "trimming_slot_open", value: cb.value, note: "" })),
+            ...sChecked.map(cb => ({ type: "shampoo_slot_open",  value: cb.value, note: "" })),
         ];
         if (inserts.length > 0) {
             const { error: insErr } = await _supabase.from("schedule_settings").insert(inserts);

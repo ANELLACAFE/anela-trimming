@@ -155,11 +155,9 @@ document.getElementById("autofill-no").addEventListener("click", () => {
 // ══════════════════════════════════
 // スケジュール設定を取得
 // ══════════════════════════════════
-let trimmingWeekdays  = new Set(); // トリミング受付可能な曜日 (0=日,1=月,...)
-let shampooWeekdays   = new Set(); // シャンプー受付可能な曜日
+let trimmingOpenSlots = new Set(); // トリミング受付可能スロット ("DOW-HH:MM" 例: "2-11:00")
+let shampooOpenSlots  = new Set(); // シャンプー受付可能スロット
 let closedDates       = new Set(); // 特定日の休業 ("YYYY-MM-DD")
-let trimmingClosedSlots = new Set(); // トリミング受付停止スロット ("DOW-HH:MM" 例: "0-15:00")
-let shampooClosedSlots  = new Set(); // シャンプー受付停止スロット
 
 async function loadScheduleSettings() {
     try {
@@ -167,17 +165,13 @@ async function loadScheduleSettings() {
             .from("schedule_settings")
             .select("type, value");
         if (error) throw error;
-        trimmingWeekdays  = new Set();
-        shampooWeekdays   = new Set();
+        trimmingOpenSlots = new Set();
+        shampooOpenSlots  = new Set();
         closedDates       = new Set();
-        trimmingClosedSlots = new Set();
-        shampooClosedSlots  = new Set();
         data.forEach(row => {
-            if (row.type === "trimming_weekday")    trimmingWeekdays.add(Number(row.value));
-            if (row.type === "shampoo_weekday")     shampooWeekdays.add(Number(row.value));
-            if (row.type === "closed_date")         closedDates.add(row.value);
-            if (row.type === "trimming_slot_closed") trimmingClosedSlots.add(row.value);
-            if (row.type === "shampoo_slot_closed")  shampooClosedSlots.add(row.value);
+            if (row.type === "trimming_slot_open") trimmingOpenSlots.add(row.value);
+            if (row.type === "shampoo_slot_open")  shampooOpenSlots.add(row.value);
+            if (row.type === "closed_date")        closedDates.add(row.value);
         });
     } catch (err) {
         console.warn("スケジュール設定の取得に失敗しました。休業日チェックをスキップします。", err);
@@ -188,12 +182,19 @@ function getSelectedCourse() {
     return document.querySelector('input[name="course"]:checked')?.value || "";
 }
 
+function isDayOpenForTrimming(dow) {
+    return trimmingOpenSlots.has(`${dow}-11:00`) || trimmingOpenSlots.has(`${dow}-15:00`);
+}
+function isDayOpenForShampoo(dow) {
+    return shampooOpenSlots.has(`${dow}-11:00`) || shampooOpenSlots.has(`${dow}-15:00`);
+}
+
 // 指定日が予約不可かどうか（両コースとも受付不可 = 定休日）
 function isClosedDay(dateStr) {
     if (!dateStr) return false;
     if (closedDates.has(dateStr)) return true;
     const dow = new Date(dateStr + "T00:00:00").getDay();
-    return !trimmingWeekdays.has(dow) && !shampooWeekdays.has(dow);
+    return !isDayOpenForTrimming(dow) && !isDayOpenForShampoo(dow);
 }
 
 // ══════════════════════════════════
@@ -232,8 +233,8 @@ function isFullyBooked(dateStr) {
         if (booked.has(s)) return true;
         if (!course) return false;
         const slotKey = `${dow}-${s}`;
-        if (course === "trimming" && trimmingClosedSlots.has(slotKey)) return true;
-        if (course === "shampoo"  && shampooClosedSlots.has(slotKey))  return true;
+        if (course === "trimming" && !trimmingOpenSlots.has(slotKey)) return true;
+        if (course === "shampoo"  && !shampooOpenSlots.has(slotKey))  return true;
         return false;
     });
 }
@@ -268,8 +269,8 @@ function renderCalendar() {
         const numClass = dow === 0 ? "style='color:#c0392b'" : dow === 6 ? "style='color:#2980b9'" : "";
 
         const course = getSelectedCourse();
-        const isTrimBlocked = course === "trimming" && !trimmingWeekdays.has(dow);
-        const isShamBlocked = course === "shampoo"  && !shampooWeekdays.has(dow);
+        const isTrimBlocked = course === "trimming" && !isDayOpenForTrimming(dow);
+        const isShamBlocked = course === "shampoo"  && !isDayOpenForShampoo(dow);
         const courseBlocked = isTrimBlocked || isShamBlocked;
 
         let cls = "cal-day";
@@ -333,8 +334,8 @@ window.calSelectDate = async function(dateStr) {
             const opt = document.createElement("option");
             opt.value = slot.value;
             const slotKey = `${dow}-${slot.value}`;
-            const isSlotClosed = (course === "trimming" && trimmingClosedSlots.has(slotKey)) ||
-                                  (course === "shampoo"  && shampooClosedSlots.has(slotKey));
+            const isSlotClosed = (course === "trimming" && !trimmingOpenSlots.has(slotKey)) ||
+                                 (course === "shampoo"  && !shampooOpenSlots.has(slotKey));
             if (reserved.includes(slot.value)) {
                 opt.textContent = slot.label + "（予約済み）";
                 opt.disabled = true;
@@ -376,8 +377,8 @@ document.addEventListener("DOMContentLoaded", async () => {
             if (calSelectedDate) {
                 const dow = new Date(calSelectedDate + "T00:00:00").getDay();
                 const course = getSelectedCourse();
-                const blocked = (course === "trimming" && !trimmingWeekdays.has(dow)) ||
-                                (course === "shampoo"  && !shampooWeekdays.has(dow));
+                const blocked = (course === "trimming" && !isDayOpenForTrimming(dow)) ||
+                                (course === "shampoo"  && !isDayOpenForShampoo(dow));
                 if (blocked) {
                     calSelectedDate = null;
                     dateInput.value = "";
