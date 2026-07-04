@@ -1232,3 +1232,50 @@ input[type="date"].has-closed { border-color: var(--color-primary); }
   transition: background 0.15s;
 }
 .trimmer-upload-label:hover { background: #e8ddd5; }
+
+/* ── スロット別受付停止テーブル ── */
+.slot-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+.slot-table th, .slot-table td {
+  border: 1px solid var(--color-tan);
+  text-align: center;
+  padding: 8px 6px;
+}
+.slot-th-day {
+  background: var(--color-cream);
+  font-weight: 700;
+  color: var(--color-mid);
+  width: 48px;
+}
+.slot-th-time {
+  background: var(--color-deep);
+  color: var(--color-cream);
+  font-weight: 700;
+  font-size: 0.82rem;
+}
+.slot-th-course {
+  background: var(--color-tan);
+  color: var(--color-mid);
+  font-weight: 700;
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+.slot-day-label {
+  font-weight: 700;
+  color: var(--color-mid);
+  background: var(--color-bg);
+}
+.slot-cell {
+  background: var(--color-white);
+}
+.slot-cell input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--color-error);
+  cursor: pointer;
+}
+.slot-table tbody tr:hover .slot-cell,
+.slot-table tbody tr:hover .slot-day-label { background: var(--color-cream); }

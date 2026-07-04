@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>管理画面 — ANELLA CAFE トリミング予約</title>
-    <link rel="stylesheet" href="style.css?v=20250627c">
+    <link rel="stylesheet" href="style.css?v=20250704a">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
@@ -44,6 +44,7 @@
         <div class="tab-bar">
             <button class="tab-btn active" data-tab="reservations">📋 予約一覧</button>
             <button class="tab-btn" data-tab="schedule">📅 営業日設定</button>
+            <button class="tab-btn" data-tab="blacklist">⛔ 拒否リスト</button>
         </div>
 
         <!-- ══ タブ①：予約一覧 ══ -->
@@ -117,7 +118,7 @@
                         <label for="wd-6">土<span class="day-en">Sat</span></label>
                     </div>
                 </div>
-                <button class="schedule-save-btn" id="save-weekdays-btn">💾 トリミング受付不可を保存</button>
+                <button class="schedule-save-btn" id="save-weekdays-btn">💾 トリミング受付可能を保存</button>
             </div>
 
             <!-- コース受付設定（曜日） -->
@@ -157,6 +158,81 @@
                 <button class="schedule-save-btn" id="save-course-weekdays-btn">💾 シャンプー受付可能を保存</button>
             </div>
 
+            <!-- スロット別受付停止 -->
+            <div class="schedule-card">
+                <h3>⏰ スロット別受付停止</h3>
+                <p style="font-size:0.88rem;color:#999;margin-bottom:16px;">特定の曜日の特定の時間枠だけ受付を停止します。<strong>停止したいスロットにチェック</strong>してください。（曜日設定で受付不可の曜日には影響しません）</p>
+                <div style="overflow-x:auto;">
+                <table class="slot-table">
+                    <thead>
+                        <tr>
+                            <th rowspan="2" class="slot-th-day">曜日</th>
+                            <th colspan="2" class="slot-th-time">11:00〜14:00</th>
+                            <th colspan="2" class="slot-th-time">15:00〜18:00</th>
+                        </tr>
+                        <tr>
+                            <th class="slot-th-course">✂️ トリミング<br>停止</th>
+                            <th class="slot-th-course">🛁 シャンプー<br>停止</th>
+                            <th class="slot-th-course">✂️ トリミング<br>停止</th>
+                            <th class="slot-th-course">🛁 シャンプー<br>停止</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="slot-day-label" style="color:#c0392b;">日</td>
+                            <td class="slot-cell"><input type="checkbox" id="ts-0-11:00" value="0-11:00"></td>
+                            <td class="slot-cell"><input type="checkbox" id="ss-0-11:00" value="0-11:00"></td>
+                            <td class="slot-cell"><input type="checkbox" id="ts-0-15:00" value="0-15:00"></td>
+                            <td class="slot-cell"><input type="checkbox" id="ss-0-15:00" value="0-15:00"></td>
+                        </tr>
+                        <tr>
+                            <td class="slot-day-label">月</td>
+                            <td class="slot-cell"><input type="checkbox" id="ts-1-11:00" value="1-11:00"></td>
+                            <td class="slot-cell"><input type="checkbox" id="ss-1-11:00" value="1-11:00"></td>
+                            <td class="slot-cell"><input type="checkbox" id="ts-1-15:00" value="1-15:00"></td>
+                            <td class="slot-cell"><input type="checkbox" id="ss-1-15:00" value="1-15:00"></td>
+                        </tr>
+                        <tr>
+                            <td class="slot-day-label">火</td>
+                            <td class="slot-cell"><input type="checkbox" id="ts-2-11:00" value="2-11:00"></td>
+                            <td class="slot-cell"><input type="checkbox" id="ss-2-11:00" value="2-11:00"></td>
+                            <td class="slot-cell"><input type="checkbox" id="ts-2-15:00" value="2-15:00"></td>
+                            <td class="slot-cell"><input type="checkbox" id="ss-2-15:00" value="2-15:00"></td>
+                        </tr>
+                        <tr>
+                            <td class="slot-day-label">水</td>
+                            <td class="slot-cell"><input type="checkbox" id="ts-3-11:00" value="3-11:00"></td>
+                            <td class="slot-cell"><input type="checkbox" id="ss-3-11:00" value="3-11:00"></td>
+                            <td class="slot-cell"><input type="checkbox" id="ts-3-15:00" value="3-15:00"></td>
+                            <td class="slot-cell"><input type="checkbox" id="ss-3-15:00" value="3-15:00"></td>
+                        </tr>
+                        <tr>
+                            <td class="slot-day-label">木</td>
+                            <td class="slot-cell"><input type="checkbox" id="ts-4-11:00" value="4-11:00"></td>
+                            <td class="slot-cell"><input type="checkbox" id="ss-4-11:00" value="4-11:00"></td>
+                            <td class="slot-cell"><input type="checkbox" id="ts-4-15:00" value="4-15:00"></td>
+                            <td class="slot-cell"><input type="checkbox" id="ss-4-15:00" value="4-15:00"></td>
+                        </tr>
+                        <tr>
+                            <td class="slot-day-label">金</td>
+                            <td class="slot-cell"><input type="checkbox" id="ts-5-11:00" value="5-11:00"></td>
+                            <td class="slot-cell"><input type="checkbox" id="ss-5-11:00" value="5-11:00"></td>
+                            <td class="slot-cell"><input type="checkbox" id="ts-5-15:00" value="5-15:00"></td>
+                            <td class="slot-cell"><input type="checkbox" id="ss-5-15:00" value="5-15:00"></td>
+                        </tr>
+                        <tr>
+                            <td class="slot-day-label" style="color:#2980b9;">土</td>
+                            <td class="slot-cell"><input type="checkbox" id="ts-6-11:00" value="6-11:00"></td>
+                            <td class="slot-cell"><input type="checkbox" id="ss-6-11:00" value="6-11:00"></td>
+                            <td class="slot-cell"><input type="checkbox" id="ts-6-15:00" value="6-15:00"></td>
+                            <td class="slot-cell"><input type="checkbox" id="ss-6-15:00" value="6-15:00"></td>
+                        </tr>
+                    </tbody>
+                </table>
+                </div>
+                <button class="schedule-save-btn" id="save-slot-btn" style="margin-top:18px;">💾 スロット設定を保存</button>
+            </div>
+
             <!-- 臨時休業日 -->
             <div class="schedule-card">
                 <h3>🚫 臨時休業日の追加</h3>
@@ -179,6 +255,33 @@
             </div>
 
         </div>
+
+        <!-- ══ タブ③：拒否リスト ══ -->
+        <div class="tab-panel" id="tab-blacklist">
+            <div class="schedule-card">
+                <h3>⛔ 拒否リスト</h3>
+                <p style="font-size:0.88rem;color:#999;margin-bottom:16px;">登録した名前または電話番号での予約を自動でブロックします。名前か電話番号のどちらか一方だけでも登録可能です。</p>
+                <div class="closed-date-form">
+                    <div>
+                        <label style="font-size:0.82rem;font-weight:700;color:var(--color-mid);display:block;margin-bottom:5px;">飼い主名</label>
+                        <input type="text" id="new-bl-name" placeholder="例：山田花子" style="min-width:130px;">
+                    </div>
+                    <div>
+                        <label style="font-size:0.82rem;font-weight:700;color:var(--color-mid);display:block;margin-bottom:5px;">電話番号</label>
+                        <input type="tel" id="new-bl-phone" placeholder="例：09012345678" style="min-width:150px;">
+                    </div>
+                    <div style="flex:1">
+                        <label style="font-size:0.82rem;font-weight:700;color:var(--color-mid);display:block;margin-bottom:5px;">メモ（任意）</label>
+                        <input type="text" id="new-bl-note" placeholder="例：無断キャンセル多発">
+                    </div>
+                    <button class="schedule-save-btn" id="add-bl-btn">＋ 追加</button>
+                </div>
+                <ul class="closed-date-list" id="bl-list">
+                    <li class="empty-list">拒否リストはまだ登録されていません。</li>
+                </ul>
+            </div>
+        </div>
+
     </div>
 </div>
 
@@ -335,6 +438,7 @@ document.querySelectorAll(".tab-btn").forEach(btn => {
         document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
         btn.classList.add("active");
         document.getElementById("tab-" + btn.dataset.tab).classList.add("active");
+        if (btn.dataset.tab === "blacklist") loadBlacklist();
     });
 });
 
@@ -778,6 +882,9 @@ async function loadScheduleSettings() {
         // コース設定チェックボックスを復元
         document.querySelectorAll("[id^='co-']").forEach(cb => { cb.checked = false; });
 
+        // スロットチェックボックスをリセット
+        document.querySelectorAll("[id^='ts-'], [id^='ss-']").forEach(cb => { cb.checked = false; });
+
         data.forEach(row => {
             if (row.type === "trimming_weekday") {
                 const cb = document.getElementById("wd-" + row.value);
@@ -786,6 +893,12 @@ async function loadScheduleSettings() {
                 closedDateRecords.push({ id: row.id, value: row.value, note: row.note });
             } else if (row.type === "shampoo_weekday") {
                 const cb = document.getElementById("co-" + row.value);
+                if (cb) cb.checked = true;
+            } else if (row.type === "trimming_slot_closed") {
+                const cb = document.getElementById("ts-" + row.value);
+                if (cb) cb.checked = true;
+            } else if (row.type === "shampoo_slot_closed") {
+                const cb = document.getElementById("ss-" + row.value);
                 if (cb) cb.checked = true;
             }
         });
@@ -912,6 +1025,111 @@ window.removeClosedDate = async function(id) {
         closedDateRecords = closedDateRecords.filter(r => r.id !== id);
         renderClosedDateList();
         showToast("臨時休業日を削除しました。");
+    } catch (err) {
+        console.error(err);
+        showToast("削除に失敗しました。", "error");
+    }
+};
+
+// ══════════════════════════════════
+// スロット別受付停止設定
+// ══════════════════════════════════
+document.getElementById("save-slot-btn").addEventListener("click", async () => {
+    const btn = document.getElementById("save-slot-btn");
+    btn.textContent = "保存中...";
+    btn.disabled = true;
+    try {
+        const { error: d1 } = await _supabase.from("schedule_settings").delete().eq("type", "trimming_slot_closed");
+        if (d1) throw d1;
+        const { error: d2 } = await _supabase.from("schedule_settings").delete().eq("type", "shampoo_slot_closed");
+        if (d2) throw d2;
+
+        const tsChecked = [...document.querySelectorAll("[id^='ts-']:checked")];
+        const ssChecked = [...document.querySelectorAll("[id^='ss-']:checked")];
+        const inserts = [
+            ...tsChecked.map(cb => ({ type: "trimming_slot_closed", value: cb.value, note: "" })),
+            ...ssChecked.map(cb => ({ type: "shampoo_slot_closed",  value: cb.value, note: "" })),
+        ];
+        if (inserts.length > 0) {
+            const { error: insErr } = await _supabase.from("schedule_settings").insert(inserts);
+            if (insErr) throw insErr;
+        }
+        showToast("スロット設定を保存しました。");
+    } catch (err) {
+        console.error(err);
+        showToast("保存に失敗しました。", "error");
+    } finally {
+        btn.textContent = "💾 スロット設定を保存";
+        btn.disabled = false;
+    }
+});
+
+// ══════════════════════════════════
+// 拒否リスト
+// ══════════════════════════════════
+let blacklistRecords = [];
+
+async function loadBlacklist() {
+    try {
+        const { data, error } = await _supabase.from("blacklist").select("*").order("created_at", { ascending: false });
+        if (error) throw error;
+        blacklistRecords = data;
+        renderBlacklist();
+    } catch (err) {
+        console.error(err);
+        showToast("拒否リストの読み込みに失敗しました。", "error");
+    }
+}
+
+function renderBlacklist() {
+    const ul = document.getElementById("bl-list");
+    if (blacklistRecords.length === 0) {
+        ul.innerHTML = '<li class="empty-list">拒否リストはまだ登録されていません。</li>';
+        return;
+    }
+    ul.innerHTML = blacklistRecords.map(r => `
+        <li class="closed-date-item">
+            <div class="date-info">
+                <strong>${r.name || "（名前なし）"}</strong>　${r.phone || "（電話なし）"}
+                ${r.note ? `<div class="date-note">${r.note}</div>` : ""}
+            </div>
+            <button class="remove-btn" onclick="removeBlacklist(${r.id})" title="削除">×</button>
+        </li>
+    `).join("");
+}
+
+document.getElementById("add-bl-btn").addEventListener("click", async () => {
+    const name  = document.getElementById("new-bl-name").value.trim();
+    const phone = document.getElementById("new-bl-phone").value.replace(/[-\s]/g, "");
+    const note  = document.getElementById("new-bl-note").value.trim();
+    if (!name && !phone) {
+        showToast("名前か電話番号のどちらかを入力してください。", "error");
+        return;
+    }
+    try {
+        const { data, error } = await _supabase.from("blacklist")
+            .insert([{ name: name || null, phone: phone || null, note: note || null }])
+            .select();
+        if (error) throw error;
+        blacklistRecords.unshift(data[0]);
+        renderBlacklist();
+        document.getElementById("new-bl-name").value  = "";
+        document.getElementById("new-bl-phone").value = "";
+        document.getElementById("new-bl-note").value  = "";
+        showToast("拒否リストに追加しました。");
+    } catch (err) {
+        console.error(err);
+        showToast("追加に失敗しました。", "error");
+    }
+});
+
+window.removeBlacklist = async function(id) {
+    try {
+        const { error } = await _supabase.from("blacklist").delete().eq("id", id);
+        if (error) throw error;
+        blacklistRecords = blacklistRecords.filter(r => r.id !== id);
+        renderBlacklist();
+        showToast("拒否リストから削除しました。");
     } catch (err) {
         console.error(err);
         showToast("削除に失敗しました。", "error");

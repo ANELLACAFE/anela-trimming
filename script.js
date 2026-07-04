@@ -155,9 +155,11 @@ document.getElementById("autofill-no").addEventListener("click", () => {
 // ══════════════════════════════════
 // スケジュール設定を取得
 // ══════════════════════════════════
-let trimmingWeekdays = new Set(); // トリミング受付可能な曜日 (0=日,1=月,...)
-let shampooWeekdays  = new Set(); // シャンプー受付可能な曜日
-let closedDates      = new Set(); // 特定日の休業 ("YYYY-MM-DD")
+let trimmingWeekdays  = new Set(); // トリミング受付可能な曜日 (0=日,1=月,...)
+let shampooWeekdays   = new Set(); // シャンプー受付可能な曜日
+let closedDates       = new Set(); // 特定日の休業 ("YYYY-MM-DD")
+let trimmingClosedSlots = new Set(); // トリミング受付停止スロット ("DOW-HH:MM" 例: "0-15:00")
+let shampooClosedSlots  = new Set(); // シャンプー受付停止スロット
 
 async function loadScheduleSettings() {
     try {
@@ -165,13 +167,17 @@ async function loadScheduleSettings() {
             .from("schedule_settings")
             .select("type, value");
         if (error) throw error;
-        trimmingWeekdays = new Set();
-        shampooWeekdays  = new Set();
-        closedDates      = new Set();
+        trimmingWeekdays  = new Set();
+        shampooWeekdays   = new Set();
+        closedDates       = new Set();
+        trimmingClosedSlots = new Set();
+        shampooClosedSlots  = new Set();
         data.forEach(row => {
-            if (row.type === "trimming_weekday") trimmingWeekdays.add(Number(row.value));
-            if (row.type === "shampoo_weekday")  shampooWeekdays.add(Number(row.value));
-            if (row.type === "closed_date")      closedDates.add(row.value);
+            if (row.type === "trimming_weekday")    trimmingWeekdays.add(Number(row.value));
+            if (row.type === "shampoo_weekday")     shampooWeekdays.add(Number(row.value));
+            if (row.type === "closed_date")         closedDates.add(row.value);
+            if (row.type === "trimming_slot_closed") trimmingClosedSlots.add(row.value);
+            if (row.type === "shampoo_slot_closed")  shampooClosedSlots.add(row.value);
         });
     } catch (err) {
         console.warn("スケジュール設定の取得に失敗しました。休業日チェックをスキップします。", err);
@@ -219,9 +225,17 @@ async function fetchBookedForMonth(year, month) {
 }
 
 function isFullyBooked(dateStr) {
-    const booked = bookedCache[dateStr];
-    if (!booked) return false;
-    return SLOTS.every(s => booked.has(s));
+    const booked = bookedCache[dateStr] || new Set();
+    const course = getSelectedCourse();
+    const dow = new Date(dateStr + "T00:00:00").getDay();
+    return SLOTS.every(s => {
+        if (booked.has(s)) return true;
+        if (!course) return false;
+        const slotKey = `${dow}-${s}`;
+        if (course === "trimming" && trimmingClosedSlots.has(slotKey)) return true;
+        if (course === "shampoo"  && shampooClosedSlots.has(slotKey))  return true;
+        return false;
+    });
 }
 
 let calYear, calMonth, calSelectedDate = null;
@@ -311,13 +325,21 @@ window.calSelectDate = async function(dateStr) {
         // キャッシュを更新
         bookedCache[dateStr] = new Set(reserved);
 
+        const course = getSelectedCourse();
+        const dow = new Date(dateStr + "T00:00:00").getDay();
         timeSelect.innerHTML = '<option value="">時間枠を選択してください</option>';
         [{ value:"11:00", label:"11:00 〜 14:00" },
          { value:"15:00", label:"15:00 〜 18:00" }].forEach(slot => {
             const opt = document.createElement("option");
             opt.value = slot.value;
+            const slotKey = `${dow}-${slot.value}`;
+            const isSlotClosed = (course === "trimming" && trimmingClosedSlots.has(slotKey)) ||
+                                  (course === "shampoo"  && shampooClosedSlots.has(slotKey));
             if (reserved.includes(slot.value)) {
                 opt.textContent = slot.label + "（予約済み）";
+                opt.disabled = true;
+            } else if (isSlotClosed) {
+                opt.textContent = slot.label + "（受付なし）";
                 opt.disabled = true;
             } else {
                 opt.textContent = slot.label + "（空きあり）";
@@ -404,6 +426,22 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         submitBtn.disabled   = true;
         submitBtn.textContent = "送信中...";
+
+        // ブラックリストチェック
+        try {
+            const phoneVal = document.getElementById("phone").value.replace(/[-\s]/g, "");
+            const nameVal  = document.getElementById("owner_name").value.trim();
+            const { data: blPhone } = await _supabase.from("blacklist").select("id").eq("phone", phoneVal).limit(1);
+            const { data: blName  } = await _supabase.from("blacklist").select("id").eq("name",  nameVal).limit(1);
+            if ((blPhone && blPhone.length > 0) || (blName && blName.length > 0)) {
+                showToast("現在ご予約をお受けできない状態です。お電話にてお問い合わせください。", "error");
+                submitBtn.disabled   = false;
+                submitBtn.textContent = "予約を確定する →";
+                return;
+            }
+        } catch(e) {
+            console.warn("ブラックリストチェック失敗（スキップ）", e);
+        }
 
         const [rabiesImgUrl, vaccineImgUrl, fleaImgUrl, heartwormImgUrl] = await Promise.all([
             uploadCertImage("rabies_image",    "rabies"),
