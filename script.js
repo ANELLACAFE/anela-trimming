@@ -259,7 +259,7 @@ function renderCalendar() {
     }
     for (let d = 1; d <= daysInMonth; d++) {
         const dateStr = `${calYear}-${String(calMonth).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
-        const isPast    = dateStr < todayStr;
+        const isPast    = dateStr <= todayStr;
         const isClosed  = isClosedDay(dateStr);
         const isFull    = isFullyBooked(dateStr);
         const isToday   = dateStr === todayStr;
