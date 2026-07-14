@@ -489,6 +489,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             course:              document.querySelector('input[name="course"]:checked')?.value || "",
             instagram_agree:     document.getElementById("instagram_agree")?.checked || false,
             booking_request:     document.getElementById("booking_request").value.trim(),
+            options_request:     document.getElementById("options_request").value.trim(),
             reservation_date:    dateInput.value,
             reservation_time:    timeSelect.value,
         };
