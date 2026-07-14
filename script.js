@@ -86,6 +86,10 @@ function validateForm() {
     if (!document.getElementById("terms_agree")?.checked) {
         setError("terms_agree", true); valid = false;
     }
+    // Instagram同意チェック
+    if (!document.getElementById("instagram_agree")?.checked) {
+        setError("instagram_agree", true); valid = false;
+    }
     return valid;
 }
 
