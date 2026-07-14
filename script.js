@@ -245,7 +245,7 @@ function renderCalendar() {
     const today = new Date();
     const todayStr = today.toISOString().split("T")[0];
     const maxDate = new Date(today);
-    maxDate.setMonth(maxDate.getMonth() + 1);
+    maxDate.setMonth(maxDate.getMonth() + 2);
     const maxDateStr = maxDate.toISOString().split("T")[0];
     const grid = document.getElementById("cal-grid");
     const label = document.getElementById("cal-month-label");
