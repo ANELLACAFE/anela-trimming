@@ -244,6 +244,9 @@ let calYear, calMonth, calSelectedDate = null;
 function renderCalendar() {
     const today = new Date();
     const todayStr = today.toISOString().split("T")[0];
+    const maxDate = new Date(today);
+    maxDate.setMonth(maxDate.getMonth() + 1);
+    const maxDateStr = maxDate.toISOString().split("T")[0];
     const grid = document.getElementById("cal-grid");
     const label = document.getElementById("cal-month-label");
     if (!grid) return;
@@ -260,6 +263,7 @@ function renderCalendar() {
     for (let d = 1; d <= daysInMonth; d++) {
         const dateStr = `${calYear}-${String(calMonth).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
         const isPast    = dateStr <= todayStr;
+        const isTooFar  = dateStr > maxDateStr;
         const isClosed  = isClosedDay(dateStr);
         const isFull    = isFullyBooked(dateStr);
         const isToday   = dateStr === todayStr;
@@ -277,6 +281,7 @@ function renderCalendar() {
         let sub = "";
         if (isSelected)     { cls += " selected";      sub = "▼ 選択中"; }
         else if (isPast)    { cls += " past"; }
+        else if (isTooFar)  { cls += " past"; }
         else if (isClosed)  { cls += " closed";        sub = "定休日"; }
         else if (isFull)    { cls += " full";          sub = "満席"; }
         else if (isTrimBlocked) { cls += " shampoo-only";   sub = "シャンプーのみ"; }
@@ -284,7 +289,7 @@ function renderCalendar() {
         else                { cls += " available";     sub = "空きあり"; }
         if (isToday)        { cls += " today"; }
 
-        const clickAttr = (!isPast && !isClosed && !isFull && !courseBlocked)
+        const clickAttr = (!isPast && !isTooFar && !isClosed && !isFull && !courseBlocked)
             ? `onclick="calSelectDate('${dateStr}')"` : "";
 
         html += `<div class="${cls}" ${clickAttr}>
