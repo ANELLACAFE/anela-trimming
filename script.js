@@ -41,7 +41,7 @@ function validateForm() {
     clearAllErrors();
 
     ["owner_name","owner_kana","phone","address","emergency_phone",
-     "dog_name","breed","dog_birthday","reservation_date",
+     "dog_name","breed","dog_birthday","dog_weight","reservation_date",
      "trigger_text","regular_hospital","allergies",
      "favorite_spots","dislike_spots","medical_history"].forEach(id => {
         if (!(document.getElementById(id)?.value || "").trim()) {
@@ -470,6 +470,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             dog_name:            document.getElementById("dog_name").value.trim(),
             breed:               document.getElementById("breed").value.trim(),
             dog_birthday:        document.getElementById("dog_birthday").value.trim(),
+            dog_weight:          parseFloat(document.getElementById("dog_weight").value) || null,
             regular_hospital:    document.getElementById("regular_hospital").value.trim(),
             allergies:           document.getElementById("allergies").value.trim(),
             favorite_spots:      document.getElementById("favorite_spots").value.trim(),
