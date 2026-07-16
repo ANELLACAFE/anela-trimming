@@ -516,9 +516,9 @@ document.addEventListener("DOMContentLoaded", async () => {
                 window.scrollTo({ top: 0, behavior: "smooth" });
             }
         } catch (err) {
+            // 技術的な詳細は開発者用の記録にだけ残し、お客様には見せない
             console.error("予約送信エラー:", err);
-            const detail = err?.message || err?.hint || err?.details || "";
-            showToast("予約に失敗しました。時間をおいて再度お試しください。" + (detail ? "（詳細: " + detail + "）" : ""), "error");
+            showToast("予約に失敗しました。時間をおいて再度お試しください。", "error");
         } finally {
             submitBtn.disabled   = false;
             submitBtn.textContent = "予約を確定する →";
