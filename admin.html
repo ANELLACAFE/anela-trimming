@@ -16,9 +16,10 @@
     <div id="login-container">
         <p class="login-logo">ANELLA CAFE</p>
         <p class="login-subtitle">スタッフ管理画面</p>
-        <input type="password" id="login-password" placeholder="パスワードを入力">
+        <input type="email" id="login-email" placeholder="メールアドレスを入力" autocomplete="username">
+        <input type="password" id="login-password" placeholder="パスワードを入力" autocomplete="current-password">
         <button id="login-btn">ログイン</button>
-        <p class="login-error" id="login-error">パスワードが正しくありません。</p>
+        <p class="login-error" id="login-error">メールアドレスまたはパスワードが正しくありません。</p>
     </div>
 </div>
 
@@ -38,6 +39,7 @@
         <div class="admin-topbar">
             <h1>管理画面</h1>
             <button class="btn btn-primary" id="refresh-btn">🔄 更新</button>
+            <button class="btn btn-ghost btn-sm" id="logout-btn">🔓 ログアウト</button>
         </div>
 
         <!-- ── タブ ── -->
@@ -315,7 +317,6 @@
 const SUPABASE_URL   = "https://omphuvdamamlseifccfq.supabase.co";
 const SUPABASE_KEY   = "sb_publishable_nTsYxNVL2N4P3WjSUtSTgw_E1aaCb4d";
 const _supabase      = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-const ADMIN_PASSWORD = "anella";
 
 // ── ユーティリティ ──
 function showToast(message, type = "success") {
@@ -341,21 +342,39 @@ function imgVal(v) {
     return val(v);
 }
 
-// ── ログイン ──
-function handleLogin() {
-    const pw = document.getElementById("login-password").value;
-    if (pw === ADMIN_PASSWORD) {
-        document.getElementById("login-section").style.display = "none";
-        document.getElementById("admin-section").style.display = "block";
-        loadReservations();
-        loadScheduleSettings();
-    } else {
-        document.getElementById("login-error").classList.add("visible");
+// ── ログイン（Supabase 認証）──
+function showAdmin() {
+    document.getElementById("login-section").style.display = "none";
+    document.getElementById("admin-section").style.display = "block";
+    loadReservations();
+    loadScheduleSettings();
+}
+async function handleLogin() {
+    const email = document.getElementById("login-email").value.trim();
+    const pw    = document.getElementById("login-password").value;
+    const errEl = document.getElementById("login-error");
+    errEl.classList.remove("visible");
+    document.getElementById("login-password").classList.remove("is-invalid");
+    const { error } = await _supabase.auth.signInWithPassword({ email, password: pw });
+    if (error) {
+        errEl.classList.add("visible");
         document.getElementById("login-password").classList.add("is-invalid");
+        return;
     }
+    showAdmin();
 }
 document.getElementById("login-btn").addEventListener("click", handleLogin);
 document.getElementById("login-password").addEventListener("keypress", e => { if (e.key === "Enter") handleLogin(); });
+document.getElementById("login-email").addEventListener("keypress", e => { if (e.key === "Enter") handleLogin(); });
+
+// ログアウト
+document.getElementById("logout-btn").addEventListener("click", async () => {
+    await _supabase.auth.signOut();
+    location.reload();
+});
+
+// 既にログイン済みなら管理画面を表示（再訪時にパスワード不要）
+_supabase.auth.getSession().then(({ data }) => { if (data.session) showAdmin(); });
 
 // ── タブ切り替え ──
 document.querySelectorAll(".tab-btn").forEach(btn => {
