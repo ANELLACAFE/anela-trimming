@@ -94,67 +94,9 @@ function validateForm() {
 }
 
 // ══════════════════════════════════
-// 電話番号による過去情報自動入力
+// （プライバシー保護のため、電話番号による過去情報自動入力は廃止）
+// 公開キーで個人情報を読み取らない方針。空き状況・照合は専用RPC経由。
 // ══════════════════════════════════
-let _autofillData = null;
-
-document.getElementById("phone").addEventListener("blur", async () => {
-    const phone = document.getElementById("phone").value.replace(/[-\s]/g, "");
-    if (!/^\d{10,11}$/.test(phone)) return;
-
-    const { data } = await _supabase
-        .from("reservations")
-        .select("*")
-        .eq("phone", phone)
-        .order("created_at", { ascending: false })
-        .limit(1);
-
-    if (!data || data.length === 0) return;
-
-    _autofillData = data[0];
-    document.getElementById("autofill-name").textContent =
-        `${_autofillData.owner_name} 様 / ${_autofillData.dog_name}ちゃん`;
-    document.getElementById("autofill-banner").style.display = "block";
-});
-
-document.getElementById("autofill-yes").addEventListener("click", () => {
-    if (!_autofillData) return;
-    const d = _autofillData;
-
-    const setVal = (id, val) => { const el = document.getElementById(id); if (el && val) el.value = val; };
-    const setRadio = (name, val) => {
-        const el = document.querySelector(`input[name="${name}"][value="${val}"]`);
-        if (el) el.checked = true;
-    };
-
-    setVal("owner_name",       d.owner_name);
-    setVal("owner_kana",       d.owner_kana);
-    setVal("address",          d.address);
-    setVal("emergency_phone",  d.emergency_phone);
-    setVal("trigger_text",     d.trigger_text);
-    setVal("dog_name",         d.dog_name);
-    setVal("breed",            d.breed);
-    setVal("dog_birthday",     d.dog_birthday);
-    setVal("regular_hospital", d.regular_hospital);
-    setVal("allergies",        d.allergies);
-    setVal("favorite_spots",   d.favorite_spots);
-    setVal("dislike_spots",    d.dislike_spots);
-    setVal("medical_history",  d.medical_history);
-    setVal("flea_tick_prevent",d.flea_tick_prevent);
-    setVal("heartworm_prevent",d.heartworm_prevent);
-    setRadio("gender",         d.gender);
-    setRadio("spay_neuter",    d.spay_neuter);
-    setRadio("rabies_vaccine", d.rabies_vaccine);
-    setRadio("mixed_vaccine",  d.mixed_vaccine);
-
-    document.getElementById("autofill-banner").style.display = "none";
-    showToast("前回の情報を入力しました。内容をご確認ください。", "success");
-});
-
-document.getElementById("autofill-no").addEventListener("click", () => {
-    document.getElementById("autofill-banner").style.display = "none";
-    _autofillData = null;
-});
 
 // ══════════════════════════════════
 // スケジュール設定を取得
@@ -214,10 +156,7 @@ async function fetchBookedForMonth(year, month) {
     const to   = `${year}-${String(month).padStart(2,"0")}-${lastDay}`;
     try {
         const { data, error } = await _supabase
-            .from("reservations")
-            .select("reservation_date, reservation_time")
-            .gte("reservation_date", from)
-            .lte("reservation_date", to);
+            .rpc("get_booked_slots", { from_date: from, to_date: to });
         if (error) throw error;
         data.forEach(r => {
             const d = r.reservation_date;
@@ -326,9 +265,7 @@ window.calSelectDate = async function(dateStr) {
     timeSelect.innerHTML = '<option value="">空き確認中...</option>';
     try {
         const { data, error } = await _supabase
-            .from("reservations")
-            .select("reservation_time")
-            .eq("reservation_date", dateStr);
+            .rpc("get_booked_slots", { from_date: dateStr, to_date: dateStr });
         if (error) throw error;
 
         const reserved = data.map(r => r.reservation_time.substring(0,5));
@@ -441,9 +378,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         try {
             const phoneVal = document.getElementById("phone").value.replace(/[-\s]/g, "");
             const nameVal  = document.getElementById("owner_name").value.trim();
-            const { data: blPhone } = await _supabase.from("blacklist").select("id").eq("phone", phoneVal).limit(1);
-            const { data: blName  } = await _supabase.from("blacklist").select("id").eq("name",  nameVal).limit(1);
-            if ((blPhone && blPhone.length > 0) || (blName && blName.length > 0)) {
+            const { data: isBlocked } = await _supabase
+                .rpc("is_blacklisted", { p_phone: phoneVal, p_name: nameVal });
+            if (isBlocked === true) {
                 showToast("現在ご予約をお受けできない状態です。お電話にてお問い合わせください。", "error");
                 submitBtn.disabled   = false;
                 submitBtn.textContent = "予約を確定する →";
