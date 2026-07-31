@@ -86,8 +86,8 @@ function validateForm() {
     if (!document.getElementById("terms_agree")?.checked) {
         setError("terms_agree", true); valid = false;
     }
-    // Instagram同意チェック
-    if (!document.getElementById("instagram_agree")?.checked) {
+    // Instagram掲載の選択（許可／希望しない のどちらか）
+    if (!document.querySelector('input[name="instagram_agree"]:checked')) {
         setError("instagram_agree", true); valid = false;
     }
     return valid;
@@ -424,7 +424,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             heartworm_prevent:   document.getElementById("heartworm_prevent").value.trim() || "なし",
             heartworm_image:     heartwormImgUrl,
             course:              document.querySelector('input[name="course"]:checked')?.value || "",
-            instagram_agree:     document.getElementById("instagram_agree")?.checked || false,
+            instagram_agree:     document.querySelector('input[name="instagram_agree"]:checked')?.value === "allow",
             booking_request:     document.getElementById("booking_request").value.trim(),
             options_request:     document.getElementById("options_request").value.trim(),
             reservation_date:    dateInput.value,

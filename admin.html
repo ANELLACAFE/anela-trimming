@@ -558,6 +558,7 @@ function setModalMode(mode) {
             { label: "フィラリア予防",      value: res.heartworm_prevent },
             { label: "フィラリア画像",      value: res.heartworm_image,     isImage: true },
             { label: "カットのご要望",      value: res.booking_request,     full: true },
+            { label: "Instagram掲載",       value: res.instagram_agree === false ? "🚫 掲載を希望されていません（NG）" : "✅ 掲載可", full: true },
         ];
 
         const historyItems = allReservations.filter(r => r.phone && r.phone === res.phone && r.id !== res.id);
