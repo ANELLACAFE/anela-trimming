@@ -101,22 +101,24 @@ function validateForm() {
 // ══════════════════════════════════
 // スケジュール設定を取得
 // ══════════════════════════════════
-let trimmingOpenSlots = new Set(); // トリミング受付可能スロット ("DOW-HH:MM" 例: "2-11:00")
-let shampooOpenSlots  = new Set(); // シャンプー受付可能スロット
+// 受付可能スロット： key "DOW-HH:MM" (例 "2-11:00") -> 受付開始日 ("" = 制限なし / "YYYY-MM-DD" = その日以降のみ)
+let trimmingOpenSlots = new Map();
+let shampooOpenSlots  = new Map();
 let closedDates       = new Set(); // 特定日の休業 ("YYYY-MM-DD")
 
 async function loadScheduleSettings() {
     try {
         const { data, error } = await _supabase
             .from("schedule_settings")
-            .select("type, value");
+            .select("type, value, note");
         if (error) throw error;
-        trimmingOpenSlots = new Set();
-        shampooOpenSlots  = new Set();
+        trimmingOpenSlots = new Map();
+        shampooOpenSlots  = new Map();
         closedDates       = new Set();
         data.forEach(row => {
-            if (row.type === "trimming_slot_open") trimmingOpenSlots.add(row.value);
-            if (row.type === "shampoo_slot_open")  shampooOpenSlots.add(row.value);
+            // note に受付開始日 (YYYY-MM-DD) が入っていれば、その日以降のみ受付
+            if (row.type === "trimming_slot_open") trimmingOpenSlots.set(row.value, row.note || "");
+            if (row.type === "shampoo_slot_open")  shampooOpenSlots.set(row.value, row.note || "");
             if (row.type === "closed_date")        closedDates.add(row.value);
         });
     } catch (err) {
@@ -128,19 +130,32 @@ function getSelectedCourse() {
     return document.querySelector('input[name="course"]:checked')?.value || "";
 }
 
-function isDayOpenForTrimming(dow) {
-    return trimmingOpenSlots.has(`${dow}-11:00`) || trimmingOpenSlots.has(`${dow}-15:00`);
+// スロットが指定日で受付可能か（受付開始日を考慮）
+function slotOpenOnDate(map, dow, time, dateStr) {
+    const key = `${dow}-${time}`;
+    if (!map.has(key)) return false;
+    const start = map.get(key);                 // "" または "YYYY-MM-DD"
+    if (start && dateStr < start) return false; // 受付開始日より前は受付不可
+    return true;
 }
-function isDayOpenForShampoo(dow) {
-    return shampooOpenSlots.has(`${dow}-11:00`) || shampooOpenSlots.has(`${dow}-15:00`);
+
+// 指定日にトリミング／シャンプーの受付枠があるか
+function isTrimmingOpenOnDate(dateStr) {
+    const dow = new Date(dateStr + "T00:00:00").getDay();
+    return slotOpenOnDate(trimmingOpenSlots, dow, "11:00", dateStr)
+        || slotOpenOnDate(trimmingOpenSlots, dow, "15:00", dateStr);
+}
+function isShampooOpenOnDate(dateStr) {
+    const dow = new Date(dateStr + "T00:00:00").getDay();
+    return slotOpenOnDate(shampooOpenSlots, dow, "11:00", dateStr)
+        || slotOpenOnDate(shampooOpenSlots, dow, "15:00", dateStr);
 }
 
 // 指定日が予約不可かどうか（両コースとも受付不可 = 定休日）
 function isClosedDay(dateStr) {
     if (!dateStr) return false;
     if (closedDates.has(dateStr)) return true;
-    const dow = new Date(dateStr + "T00:00:00").getDay();
-    return !isDayOpenForTrimming(dow) && !isDayOpenForShampoo(dow);
+    return !isTrimmingOpenOnDate(dateStr) && !isShampooOpenOnDate(dateStr);
 }
 
 // ══════════════════════════════════
@@ -175,9 +190,8 @@ function isFullyBooked(dateStr) {
     return SLOTS.every(s => {
         if (booked.has(s)) return true;
         if (!course) return false;
-        const slotKey = `${dow}-${s}`;
-        if (course === "trimming" && !trimmingOpenSlots.has(slotKey)) return true;
-        if (course === "shampoo"  && !shampooOpenSlots.has(slotKey))  return true;
+        if (course === "trimming" && !slotOpenOnDate(trimmingOpenSlots, dow, s, dateStr)) return true;
+        if (course === "shampoo"  && !slotOpenOnDate(shampooOpenSlots, dow, s, dateStr))  return true;
         return false;
     });
 }
@@ -216,8 +230,8 @@ function renderCalendar() {
         const numClass = dow === 0 ? "style='color:#c0392b'" : dow === 6 ? "style='color:#2980b9'" : "";
 
         const course = getSelectedCourse();
-        const isTrimBlocked = course === "trimming" && !isDayOpenForTrimming(dow);
-        const isShamBlocked = course === "shampoo"  && !isDayOpenForShampoo(dow);
+        const isTrimBlocked = course === "trimming" && !isTrimmingOpenOnDate(dateStr);
+        const isShamBlocked = course === "shampoo"  && !isShampooOpenOnDate(dateStr);
         const courseBlocked = isTrimBlocked || isShamBlocked;
 
         let cls = "cal-day";
@@ -279,9 +293,8 @@ window.calSelectDate = async function(dateStr) {
          { value:"15:00", label:"15:00 〜 18:00" }].forEach(slot => {
             const opt = document.createElement("option");
             opt.value = slot.value;
-            const slotKey = `${dow}-${slot.value}`;
-            const isSlotClosed = (course === "trimming" && !trimmingOpenSlots.has(slotKey)) ||
-                                 (course === "shampoo"  && !shampooOpenSlots.has(slotKey));
+            const isSlotClosed = (course === "trimming" && !slotOpenOnDate(trimmingOpenSlots, dow, slot.value, dateStr)) ||
+                                 (course === "shampoo"  && !slotOpenOnDate(shampooOpenSlots, dow, slot.value, dateStr));
             if (reserved.includes(slot.value)) {
                 opt.textContent = slot.label + "（予約済み）";
                 opt.disabled = true;
@@ -321,10 +334,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.querySelectorAll('input[name="course"]').forEach(radio => {
         radio.addEventListener("change", () => {
             if (calSelectedDate) {
-                const dow = new Date(calSelectedDate + "T00:00:00").getDay();
                 const course = getSelectedCourse();
-                const blocked = (course === "trimming" && !isDayOpenForTrimming(dow)) ||
-                                (course === "shampoo"  && !isDayOpenForShampoo(dow));
+                const blocked = (course === "trimming" && !isTrimmingOpenOnDate(calSelectedDate)) ||
+                                (course === "shampoo"  && !isShampooOpenOnDate(calSelectedDate));
                 if (blocked) {
                     calSelectedDate = null;
                     dateInput.value = "";

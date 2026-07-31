@@ -89,7 +89,7 @@
             <!-- 受付スロット設定 -->
             <div class="schedule-card">
                 <h3>✂️🛁 受付スロット設定</h3>
-                <p style="font-size:0.88rem;color:#999;margin-bottom:16px;"><strong>受付する曜日・時間枠・コースにチェック</strong>を入れてください。チェックのある枠のみ予約を受け付けます。</p>
+                <p style="font-size:0.88rem;color:#999;margin-bottom:16px;"><strong>受付する曜日・時間枠・コースにチェック</strong>を入れてください。チェックのある枠のみ予約を受け付けます。<br>チェックすると出てくる<strong>「受付開始日」</strong>に日付を入れると、<strong>その日以降だけ</strong>予約を受け付けます（空欄なら今すぐ受付開始）。新しいトリマーの担当開始など、先の日付から枠を開けたいときに使います。</p>
                 <div style="overflow-x:auto;">
                 <table class="slot-table">
                     <thead>
@@ -347,6 +347,7 @@ function showAdmin() {
     document.getElementById("login-section").style.display = "none";
     document.getElementById("admin-section").style.display = "block";
     loadReservations();
+    initSlotStartInputs();
     loadScheduleSettings();
 }
 async function handleLogin() {
@@ -811,6 +812,45 @@ document.getElementById("confirm-ok-btn").addEventListener("click", async () => 
 // ══════════════════════════════════
 let closedDateRecords = []; // { id, value, note } のリスト
 
+// スロットのチェックボックスに「受付開始日」入力欄を動的に付与する
+function initSlotStartInputs() {
+    document.querySelectorAll("input[type='checkbox'][id^='slot-']").forEach(cb => {
+        if (cb.dataset.startInit) return;                 // 二重生成を防ぐ
+        cb.dataset.startInit = "1";
+        const suffix = cb.id.substring("slot-".length);   // 例 "t-4-15:00"
+        const wrap = document.createElement("div");
+        wrap.className = "slot-start-wrap";
+        wrap.id = "startwrap-" + suffix;
+        wrap.style.display = "none";
+        wrap.innerHTML = `<span>受付開始</span>`;
+        const inp = document.createElement("input");
+        inp.type = "date";
+        inp.className = "slot-start";
+        inp.id = "start-" + suffix;
+        inp.title = "この枠の受付開始日（空欄なら今すぐ受付）";
+        wrap.appendChild(inp);
+        cb.parentElement.appendChild(wrap);
+        cb.addEventListener("change", () => {
+            wrap.style.display = cb.checked ? "block" : "none";
+            if (!cb.checked) inp.value = "";
+        });
+    });
+}
+
+// 指定スロットの受付開始日欄に値をセットして表示
+function setSlotStart(suffix, note) {
+    const inp  = document.getElementById("start-" + suffix);
+    const wrap = document.getElementById("startwrap-" + suffix);
+    if (inp)  inp.value = note || "";
+    if (wrap) wrap.style.display = "block";
+}
+
+// チェックボックスidから受付開始日の入力値を取得
+function getSlotStart(cbId) {
+    const inp = document.getElementById("start-" + cbId.substring("slot-".length));
+    return inp ? (inp.value || "") : "";
+}
+
 async function loadScheduleSettings() {
     try {
         const { data, error } = await _supabase
@@ -819,17 +859,19 @@ async function loadScheduleSettings() {
             .order("created_at", { ascending: true });
         if (error) throw error;
 
-        // スロットチェックボックスをリセット
-        document.querySelectorAll("[id^='slot-']").forEach(cb => { cb.checked = false; });
+        // スロットチェックボックス・受付開始日をリセット
+        document.querySelectorAll("input[type='checkbox'][id^='slot-']").forEach(cb => { cb.checked = false; });
+        document.querySelectorAll(".slot-start-wrap").forEach(w => { w.style.display = "none"; });
+        document.querySelectorAll(".slot-start").forEach(si => { si.value = ""; });
         closedDateRecords = [];
 
         data.forEach(row => {
             if (row.type === "trimming_slot_open") {
                 const cb = document.getElementById("slot-t-" + row.value);
-                if (cb) cb.checked = true;
+                if (cb) { cb.checked = true; setSlotStart("t-" + row.value, row.note); }
             } else if (row.type === "shampoo_slot_open") {
                 const cb = document.getElementById("slot-s-" + row.value);
-                if (cb) cb.checked = true;
+                if (cb) { cb.checked = true; setSlotStart("s-" + row.value, row.note); }
             } else if (row.type === "closed_date") {
                 closedDateRecords.push({ id: row.id, value: row.value, note: row.note });
             }
@@ -920,9 +962,10 @@ document.getElementById("save-slot-btn").addEventListener("click", async () => {
 
         const tChecked = [...document.querySelectorAll("[id^='slot-t-']:checked")];
         const sChecked = [...document.querySelectorAll("[id^='slot-s-']:checked")];
+        // note に受付開始日 (YYYY-MM-DD) を保存。空欄なら制限なし。
         const inserts = [
-            ...tChecked.map(cb => ({ type: "trimming_slot_open", value: cb.value, note: "" })),
-            ...sChecked.map(cb => ({ type: "shampoo_slot_open",  value: cb.value, note: "" })),
+            ...tChecked.map(cb => ({ type: "trimming_slot_open", value: cb.value, note: getSlotStart(cb.id) })),
+            ...sChecked.map(cb => ({ type: "shampoo_slot_open",  value: cb.value, note: getSlotStart(cb.id) })),
         ];
         if (inserts.length > 0) {
             const { error: insErr } = await _supabase.from("schedule_settings").insert(inserts);

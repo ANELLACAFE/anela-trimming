@@ -1286,3 +1286,24 @@ input[type="date"].has-closed { border-color: var(--color-primary); }
 }
 .slot-table tbody tr:hover .slot-cell,
 .slot-table tbody tr:hover .slot-day-label { background: var(--color-cream); }
+.slot-start-wrap {
+  margin-top: 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+.slot-start-wrap span {
+  font-size: 0.62rem;
+  color: var(--color-mid);
+  font-weight: 700;
+  white-space: nowrap;
+}
+.slot-start {
+  font-size: 0.7rem;
+  padding: 3px 4px;
+  border: 1px solid var(--color-tan);
+  border-radius: 5px;
+  max-width: 118px;
+  color: var(--color-deep);
+}
