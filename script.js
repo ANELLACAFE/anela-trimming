@@ -452,7 +452,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 } else { throw error; }
             } else {
                 // 完了画面に切り替え
-                const timeLabel = timeSelect.options[timeSelect.selectedIndex]?.text || "";
+                const timeLabel = (timeSelect.options[timeSelect.selectedIndex]?.text || "").replace(/（.*?）\s*$/, "").trim();
                 const dateVal   = dateInput.value;
                 const [y, m, d] = dateVal.split("-");
                 const weekdays  = ["日","月","火","水","木","金","土"];

@@ -487,6 +487,7 @@ const KARTE_EDIT_FIELDS = [
     { key: "heartworm_prevent",  label: "フィラリア予防",       type: "text" },
     { key: "course",             label: "コース",               type: "select", options: [{ value: "trimming", text: "✂️ トリミングコース" }, { value: "shampoo", text: "🛁 シャンプーコース" }] },
     { key: "booking_request",    label: "カットのご要望",       type: "text" },
+    { key: "instagram_agree",    label: "Instagram掲載",        type: "select", options: [{ value: "allow", text: "✅ 掲載可" }, { value: "deny", text: "🚫 掲載を希望しない" }] },
 ];
 
 let currentDetailIndex = null;
@@ -510,6 +511,8 @@ function setModalMode(mode) {
         editForm.innerHTML = KARTE_EDIT_FIELDS.map(f => {
             const rawVal = f.key === "reservation_time"
                 ? (res[f.key] || "").substring(0, 5)
+                : f.key === "instagram_agree"
+                ? (res[f.key] === false ? "deny" : "allow")
                 : (res[f.key] || "");
             let inputHtml;
             if (f.type === "select") {
@@ -622,6 +625,9 @@ document.getElementById("save-edit-btn").addEventListener("click", async () => {
     new FormData(form).forEach((value, key) => { updates[key] = value; });
     if (updates.reservation_time && updates.reservation_time.length === 5) {
         updates.reservation_time += ":00";
+    }
+    if ("instagram_agree" in updates) {
+        updates.instagram_agree = (updates.instagram_agree === "allow");
     }
     saveBtn.disabled     = true;
     saveBtn.textContent  = "保存中...";
