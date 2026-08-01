@@ -341,6 +341,14 @@ function imgVal(v) {
     }
     return val(v);
 }
+// Instagram掲載「希望しない（NG）」の判定
+// DBカラムが真偽値・文字列どちらの型でも正しく判定できるように正規化する。
+// （フォームは true/false で保存するが、テキスト型カラムだと "false" 等の文字列で
+//  返り、厳密等価 === false では拾えず「掲載可」と誤表示されるのを防ぐ）
+function isInstagramNG(v) {
+    return v === false || v === "false" || v === 0 || v === "0" ||
+           v === "deny" || v === "NG" || v === "no";
+}
 
 // ── ログイン（Supabase 認証）──
 function showAdmin() {
@@ -439,7 +447,7 @@ function renderTable() {
             <td><strong>${res.reservation_date}</strong></td>
             <td><span class="time-badge ${cls}">${label}</span></td>
             <td>${res.owner_name || "—"}</td>
-            <td><strong>${res.dog_name || "—"}</strong></td>
+            <td><strong>${res.dog_name || "—"}</strong>${isInstagramNG(res.instagram_agree) ? ' <span title="Instagram掲載を希望されていません" style="display:inline-block;background:#e74c3c;color:#fff;font-size:0.66rem;font-weight:700;padding:1px 6px;border-radius:4px;margin-left:4px;vertical-align:middle;white-space:nowrap;">📷NG</span>' : ""}</td>
             <td>${res.breed || "—"}</td>
             <td><button class="btn btn-info btn-sm" onclick="showDetail(${idx})">📋 カルテ表示</button></td>
             <td><button class="btn btn-danger btn-sm" onclick="confirmDelete(${idx})">🗑 削除</button></td>
@@ -559,7 +567,7 @@ function setModalMode(mode) {
             { label: "フィラリア予防",      value: res.heartworm_prevent },
             { label: "フィラリア画像",      value: res.heartworm_image,     isImage: true },
             { label: "カットのご要望",      value: res.booking_request,     full: true },
-            { label: "Instagram掲載",       value: res.instagram_agree === false ? "🚫 掲載を希望されていません（NG）" : "✅ 掲載可", full: true },
+            { label: "Instagram掲載",       value: isInstagramNG(res.instagram_agree) ? "🚫 掲載を希望されていません（NG）" : "✅ 掲載可", full: true },
         ];
 
         const historyItems = allReservations.filter(r => r.phone && r.phone === res.phone && r.id !== res.id);
