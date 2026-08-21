@@ -395,12 +395,21 @@ function isFullyBooked(dateStr) {
 
 let calYear, calMonth, calSelectedDate = null;
 
+// 日付を「日本時間（ブラウザのローカル時刻）」のYYYY-MM-DDに変換する。
+// ※ toISOString() はUTCになるため、深夜帯(JST)に日付が1日ずれる不具合を防ぐ。
+function toLocalYmd(date) {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, "0");
+    const d = String(date.getDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+}
+
 function renderCalendar() {
     const today = new Date();
-    const todayStr = today.toISOString().split("T")[0];
+    const todayStr = toLocalYmd(today);
     const maxDate = new Date(today);
     maxDate.setMonth(maxDate.getMonth() + 2);
-    const maxDateStr = maxDate.toISOString().split("T")[0];
+    const maxDateStr = toLocalYmd(maxDate);
     const grid = document.getElementById("cal-grid");
     const label = document.getElementById("cal-month-label");
     if (!grid) return;

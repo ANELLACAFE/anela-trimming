@@ -101,6 +101,32 @@ alter table public.reservations
   add column if not exists user_id uuid references auth.users (id);
 
 
+-- ------------------------------------------------------------
+-- 5. reservations「本人の予約だけ読める」ポリシー（第2段階マイページの先取り）
+--    ・reservations は既に RLS 有効・匿名は他人の予約を読めない設定です（確認済み）。
+--    ・ここで足すのは「読み取り(select)」の許可だけ。しかも対象は
+--      ログイン済みユーザー(authenticated)に限定するため、
+--      既存の匿名予約(insert)の挙動には一切影響しません（非破壊）。
+--    ・自分が「ログインした状態で入れた予約(user_id が自分)」のみ読めます。
+--      過去の匿名予約(user_id が NULL)は誰にも見えないまま＝安全。
+--    ・まだ予約履歴を表示する画面は無いので、今は"仕込み"です。
+-- ------------------------------------------------------------
+drop policy if exists reservations_select_own on public.reservations;
+create policy reservations_select_own on public.reservations
+  for select to authenticated using (auth.uid() = user_id);
+
+-- ログイン中(authenticated)のユーザーが「自分名義(user_id=自分)」の予約を
+-- 書き込めるよう、insert 許可を明示的に付与する。
+--   ・既存の予約フォームは "匿名(anon)" で書き込んでいるが、ログインすると
+--     ロールが authenticated に変わる。もし既存の insert 許可が anon 専用だと
+--     ログイン中の予約だけ失敗し得るため、その穴を設計で塞ぐ。
+--   ・with check で user_id=自分 を強制。他人名義の予約は作れない。
+--   ・匿名予約(anon)の既存ポリシーには触れないので従来どおり動く。
+drop policy if exists reservations_insert_own on public.reservations;
+create policy reservations_insert_own on public.reservations
+  for insert to authenticated with check (auth.uid() = user_id);
+
+
 -- ============================================================
 --  導入後の確認（任意）:
 --    別のメールで2アカウント作り、片方でログインした状態で
