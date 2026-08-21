@@ -1,23 +1,24 @@
 /**
- * コーチ明細 自動発行スクリプト（Google Apps Script）
+ * 工賃明細 自動発行スクリプト（Google Apps Script）
  * ------------------------------------------------------------------
- * コーチシステムのスプレッドシートに貼り付けて使います。
+ * 工賃システムのスプレッドシートに貼り付けて使います。
  * 既存の集計データ（振込CSVの元データ）を読み込み、
- * コーチ1人につき1枚のPDF明細を作成して Google ドライブに自動保存します。
+ * 全利用者分の工賃明細を「1つのPDF」にまとめて Google ドライブへ保存します。
  *
- * 保存先: （親フォルダ）/ コーチ明細 / 2026年08月 / 山田太郎.pdf
+ * ・1名 = 1ページ（改ページで区切り）→ 印刷して各人へ配布できます。
+ * ・保存先は指定したフォルダ（SAVE_FOLDER_ID）に直接保存します。
  *
  * 使い方:
  *   1. スプレッドシートを開く →「拡張機能」→「Apps Script」
  *   2. このファイルの内容を貼り付けて保存
  *   3. 下の CONFIG を自分のシートに合わせて設定
- *   4. スプレッドシートを再読み込み → メニュー「コーチ明細」→「明細を発行」
+ *   4. スプレッドシートを再読み込み → メニュー「工賃明細」→「明細を発行」
  * ------------------------------------------------------------------
  */
 
 /** ===== 設定（ここだけ自分のシートに合わせる） ===== */
 var CONFIG = {
-  // 明細の元になるシート名（1行 = 1レッスン/1明細行 を想定）
+  // 明細の元になるシート名（1行 = 1明細行 を想定）
   DATA_SHEET_NAME: '明細データ',
 
   // 見出し（ヘッダー）がある行番号
@@ -26,24 +27,25 @@ var CONFIG = {
   // 列は「見出しの文字」で自動判定します。実際のシートの見出し名に合わせてください。
   // 使わない項目は '' （空文字）にすると明細に出しません。
   COL: {
-    coachName: 'コーチ名',   // 必須：この列でコーチごとにまとめます
-    date:      '日付',       // レッスン日など（任意）
-    content:   '内容',       // レッスン内容・メニュー名など（任意）
+    userName:  '利用者名',   // 必須：この列で利用者ごとにまとめます（1名1ページ）
+    date:      '日付',       // 作業日など（任意）
+    content:   '内容',       // 作業内容・項目名など（任意）
     unitPrice: '単価',       // 単価（任意）
-    quantity:  '件数',       // 件数・回数（任意）
+    quantity:  '件数',       // 件数・数量（任意）
     amount:    '金額',       // 必須：合計に使う金額列
     deduction: '',           // 控除（任意）例: '控除'
     note:      ''            // 備考（任意）例: '備考'
   },
 
-  // 保存先の親フォルダID（空ならマイドライブ直下に「コーチ明細」を作成）
-  // フォルダを開いたときのURL .../folders/ここがID の部分
-  PARENT_FOLDER_ID: '',
+  // 保存先フォルダのID（このフォルダの中に1つのPDFを保存します）
+  // フォルダを開いたときのURL .../folders/ここがID の部分をコピー
+  // 空のままなら、マイドライブ直下に「工賃明細」フォルダを作って保存します。
+  SAVE_FOLDER_ID: '',
 
-  // 明細に載せる店舗名・発行元
+  // 明細に載せる発行元名
   SHOP_NAME: 'anela',
 
-  // 振込予定日を「特定セル」から1つ取りたい場合に指定（例: '設定!B2'）。空なら明細に出しません。
+  // 振込予定日を「特定セル」から取りたい場合に指定（例: '設定!B2'）。空なら明細に出しません。
   PAYMENT_DATE_A1: '',
 
   // 金額の通貨記号
@@ -55,20 +57,20 @@ var CONFIG = {
 /** スプレッドシートを開いたときにメニューを追加 */
 function onOpen() {
   SpreadsheetApp.getUi()
-    .createMenu('コーチ明細')
-    .addItem('明細を発行（PDF）', 'issueCoachStatements')
+    .createMenu('工賃明細')
+    .addItem('明細を発行（PDF・全員分1ファイル）', 'issueWageStatements')
     .addToUi();
 }
 
-/** メイン処理：全コーチ分のPDF明細を発行 */
-function issueCoachStatements() {
+/** メイン処理：全利用者分の明細を1つのPDFにまとめて発行 */
+function issueWageStatements() {
   var ui = SpreadsheetApp.getUi();
   var ss = SpreadsheetApp.getActiveSpreadsheet();
 
-  // 対象月のラベルを確認（フォルダ名・明細タイトルに使用）
+  // 対象月のラベルを確認（ファイル名・明細タイトルに使用）
   var defaultLabel = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy年MM月');
   var res = ui.prompt(
-    'コーチ明細の発行',
+    '工賃明細の発行',
     '対象月を入力してください（例: ' + defaultLabel + '）',
     ui.ButtonSet.OK_CANCEL
   );
@@ -89,8 +91,8 @@ function issueCoachStatements() {
 
   var header = values[CONFIG.HEADER_ROW - 1];
   var idx = resolveColumns_(header);
-  if (idx.coachName < 0) {
-    ui.alert('コーチ名の列「' + CONFIG.COL.coachName + '」が見つかりません。見出し名を確認してください。');
+  if (idx.userName < 0) {
+    ui.alert('利用者名の列「' + CONFIG.COL.userName + '」が見つかりません。見出し名を確認してください。');
     return;
   }
   if (idx.amount < 0) {
@@ -98,18 +100,18 @@ function issueCoachStatements() {
     return;
   }
 
-  // コーチごとに行をまとめる
-  var groups = {};   // coachName -> [rows]
+  // 利用者ごとに行をまとめる
+  var groups = {};   // userName -> [rows]
   var order = [];    // 出現順を保持
   for (var r = CONFIG.HEADER_ROW; r < values.length; r++) {
     var row = values[r];
-    var name = String(row[idx.coachName] || '').trim();
+    var name = String(row[idx.userName] || '').trim();
     if (!name) continue;
     if (!groups[name]) { groups[name] = []; order.push(name); }
     groups[name].push(row);
   }
   if (order.length === 0) {
-    ui.alert('対象のコーチが見つかりませんでした。');
+    ui.alert('対象の利用者が見つかりませんでした。');
     return;
   }
 
@@ -122,35 +124,36 @@ function issueCoachStatements() {
     } catch (e) { /* 指定が不正なら無視 */ }
   }
 
-  // 保存先フォルダ:（親）/ コーチ明細 / 対象月
-  var baseFolder = getOrCreateFolder_(getParentFolder_(), 'コーチ明細');
-  var monthFolder = getOrCreateFolder_(baseFolder, monthLabel);
-
-  // 1人ずつPDF発行
-  var count = 0;
+  // 全員分のページを1つのHTMLに連結（1名 = 1ページ）
+  var pages = [];
   for (var i = 0; i < order.length; i++) {
-    var coach = order[i];
-    var rows = groups[coach];
-    var html = buildStatementHtml_(coach, rows, idx, monthLabel, paymentDate);
-    var pdf = Utilities.newBlob(html, 'text/html', coach + '.html')
-                       .getAs('application/pdf')
-                       .setName(sanitizeFileName_(coach) + '.pdf');
-
-    // 同名ファイルがあれば上書き（古いものはゴミ箱へ）
-    var existing = monthFolder.getFilesByName(pdf.getName());
-    while (existing.hasNext()) { existing.next().setTrashed(true); }
-
-    monthFolder.createFile(pdf);
-    count++;
+    var name2 = order[i];
+    pages.push(buildStatementPageHtml_(name2, groups[name2], idx, monthLabel, paymentDate));
   }
+  var html = wrapDocument_(pages.join('\n'));
 
-  ss.toast(count + '名分のコーチ明細を発行しました。', 'コーチ明細', 5);
+  // 1つのPDFに変換
+  var fileName = '工賃明細_' + sanitizeFileName_(monthLabel) + '.pdf';
+  var pdf = Utilities.newBlob(html, 'text/html', 'wage.html')
+                     .getAs('application/pdf')
+                     .setName(fileName);
+
+  // 保存先フォルダ（指定があればそのフォルダ、なければマイドライブ直下に作成）
+  var folder = getSaveFolder_();
+
+  // 同名ファイルがあれば上書き（古いものはゴミ箱へ）
+  var existing = folder.getFilesByName(fileName);
+  while (existing.hasNext()) { existing.next().setTrashed(true); }
+
+  var file = folder.createFile(pdf);
+
+  ss.toast(order.length + '名分の工賃明細を1ファイルで発行しました。', '工賃明細', 5);
   ui.alert(
     '発行が完了しました。\n\n' +
     '対象月: ' + monthLabel + '\n' +
-    '人数: ' + count + '名\n' +
-    '保存先: マイドライブ /（親フォルダ）/ コーチ明細 / ' + monthLabel + '\n\n' +
-    'フォルダURL:\n' + monthFolder.getUrl()
+    '人数: ' + order.length + '名（1名1ページ）\n' +
+    'ファイル: ' + fileName + '\n\n' +
+    'PDF URL:\n' + file.getUrl()
   );
 }
 
@@ -164,7 +167,7 @@ function resolveColumns_(header) {
     return -1;
   }
   return {
-    coachName: find(CONFIG.COL.coachName),
+    userName:  find(CONFIG.COL.userName),
     date:      find(CONFIG.COL.date),
     content:   find(CONFIG.COL.content),
     unitPrice: find(CONFIG.COL.unitPrice),
@@ -175,8 +178,34 @@ function resolveColumns_(header) {
   };
 }
 
-/** 1コーチ分の明細HTMLを組み立て */
-function buildStatementHtml_(coach, rows, idx, monthLabel, paymentDate) {
+/** ドキュメント全体（PDF）のHTMLラッパー。1名=1ページになるようCSSで改ページ */
+function wrapDocument_(pagesHtml) {
+  return '' +
+  '<!doctype html><html><head><meta charset="utf-8"><style>' +
+  '@page{size:A4;margin:14mm;}' +
+  'body{font-family:"Hiragino Sans","Yu Gothic",sans-serif;color:#222;font-size:12px;margin:0;}' +
+  '.page{page-break-after:always;}' +
+  '.page:last-child{page-break-after:auto;}' +
+  '.head{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid #333;padding-bottom:8px;margin-bottom:16px;}' +
+  '.title{font-size:20px;font-weight:bold;letter-spacing:2px;}' +
+  '.shop{text-align:right;font-size:12px;color:#555;}' +
+  '.to{font-size:15px;margin:12px 0 4px;}' +
+  '.to b{font-size:17px;border-bottom:1px solid #999;padding:0 24px 2px 4px;}' +
+  '.meta{color:#555;margin:2px 0;}' +
+  'table{width:100%;border-collapse:collapse;margin-top:14px;}' +
+  'th,td{border:1px solid #bbb;padding:6px 8px;}' +
+  'th{background:#f0f0f0;text-align:left;font-weight:bold;}' +
+  '.num{text-align:right;white-space:nowrap;}' +
+  '.sum td{background:#fafafa;font-weight:bold;}' +
+  '.total td{background:#333;color:#fff;font-size:14px;font-weight:bold;}' +
+  '.foot{margin-top:24px;color:#777;font-size:11px;}' +
+  '</style></head><body>' +
+  pagesHtml +
+  '</body></html>';
+}
+
+/** 1利用者分の明細ページ（PDFの1ページ）を組み立て */
+function buildStatementPageHtml_(userName, rows, idx, monthLabel, paymentDate) {
   var showDate    = idx.date >= 0;
   var showContent = idx.content >= 0;
   var showUnit    = idx.unitPrice >= 0;
@@ -221,10 +250,8 @@ function buildStatementHtml_(coach, rows, idx, monthLabel, paymentDate) {
   var totalsHtml = '<tr class="sum"><td colspan="' + (colCount - 1) + '">小計</td>' +
                    '<td class="num">' + money_(subtotal) + '</td></tr>';
   if (showDeduct) {
-    totalsHtml = '<tr class="sum"><td colspan="' + (colCount - 1) + '">小計</td>' +
-                 '<td class="num">' + money_(subtotal) + '</td></tr>' +
-                 '<tr class="sum"><td colspan="' + (colCount - 1) + '">控除</td>' +
-                 '<td class="num">- ' + money_(deductTotal) + '</td></tr>';
+    totalsHtml += '<tr class="sum"><td colspan="' + (colCount - 1) + '">控除</td>' +
+                  '<td class="num">- ' + money_(deductTotal) + '</td></tr>';
   }
   var payableHtml = '<tr class="total"><td colspan="' + (colCount - 1) + '">振込予定額</td>' +
                     '<td class="num">' + money_(payable) + '</td></tr>';
@@ -233,47 +260,29 @@ function buildStatementHtml_(coach, rows, idx, monthLabel, paymentDate) {
   var paymentRow = paymentDate ? '<div class="meta">振込予定日：' + esc_(paymentDate) + '</div>' : '';
 
   return '' +
-  '<!doctype html><html><head><meta charset="utf-8"><style>' +
-  'body{font-family:"Hiragino Sans","Yu Gothic",sans-serif;color:#222;margin:32px;font-size:12px;}' +
-  '.head{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid #333;padding-bottom:8px;margin-bottom:16px;}' +
-  '.title{font-size:20px;font-weight:bold;letter-spacing:2px;}' +
-  '.shop{text-align:right;font-size:12px;color:#555;}' +
-  '.to{font-size:15px;margin:12px 0 4px;}' +
-  '.to b{font-size:17px;border-bottom:1px solid #999;padding:0 24px 2px 4px;}' +
-  '.meta{color:#555;margin:2px 0;}' +
-  'table{width:100%;border-collapse:collapse;margin-top:14px;}' +
-  'th,td{border:1px solid #bbb;padding:6px 8px;}' +
-  'th{background:#f0f0f0;text-align:left;font-weight:bold;}' +
-  '.num{text-align:right;white-space:nowrap;}' +
-  '.sum td{background:#fafafa;font-weight:bold;}' +
-  '.total td{background:#333;color:#fff;font-size:14px;font-weight:bold;}' +
-  '.foot{margin-top:24px;color:#777;font-size:11px;}' +
-  '</style></head><body>' +
-  '<div class="head"><div class="title">コーチ明細</div>' +
+  '<div class="page">' +
+  '<div class="head"><div class="title">工賃明細</div>' +
   '<div class="shop">' + esc_(CONFIG.SHOP_NAME) + '<br>発行日：' + issuedAt + '</div></div>' +
   '<div class="meta">対象月：' + esc_(monthLabel) + '</div>' +
   paymentRow +
-  '<div class="to">コーチ　<b>' + esc_(coach) + '</b>　様</div>' +
+  '<div class="to"><b>' + esc_(userName) + '</b>　様</div>' +
   '<table><thead><tr>' + ths + '</tr></thead>' +
   '<tbody>' + bodyRows + totalsHtml + payableHtml + '</tbody></table>' +
   '<div class="foot">本明細に関するお問い合わせは ' + esc_(CONFIG.SHOP_NAME) + ' までご連絡ください。</div>' +
-  '</body></html>';
+  '</div>';
 }
 
 /* ===== 補助関数 ===== */
 
-function getParentFolder_() {
-  if (CONFIG.PARENT_FOLDER_ID) {
-    try { return DriveApp.getFolderById(CONFIG.PARENT_FOLDER_ID); }
-    catch (e) { /* IDが不正ならマイドライブへ */ }
+function getSaveFolder_() {
+  if (CONFIG.SAVE_FOLDER_ID) {
+    try { return DriveApp.getFolderById(CONFIG.SAVE_FOLDER_ID); }
+    catch (e) { /* IDが不正ならマイドライブに作成 */ }
   }
-  return DriveApp.getRootFolder();
-}
-
-function getOrCreateFolder_(parent, name) {
-  var it = parent.getFoldersByName(name);
+  var root = DriveApp.getRootFolder();
+  var it = root.getFoldersByName('工賃明細');
   if (it.hasNext()) return it.next();
-  return parent.createFolder(name);
+  return root.createFolder('工賃明細');
 }
 
 function toNumber_(v) {
