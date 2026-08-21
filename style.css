@@ -256,6 +256,60 @@ input[type="file"] {
 .submit-btn:active:not(:disabled) { transform: translateY(0); }
 .submit-btn:disabled { background: #c5b9b0; cursor: not-allowed; box-shadow: none; }
 
+/* ── ログインカード ── */
+.auth-card {
+  border: 1.5px solid var(--color-tan);
+}
+.auth-desc {
+  font-size: 0.9rem;
+  line-height: 1.7;
+  color: var(--color-mid);
+  margin-bottom: 18px;
+}
+.auth-desc strong { color: var(--color-deep); }
+.auth-note {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--color-primary);
+  margin-top: 6px;
+}
+.auth-btn {
+  display: inline-block;
+  padding: 12px 28px;
+  background: linear-gradient(135deg, var(--color-mid), var(--color-primary));
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: 0.98rem;
+  font-weight: 700;
+  font-family: var(--font-body);
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.1s;
+  box-shadow: 0 4px 14px rgba(107,79,58,0.22);
+}
+.auth-btn:hover:not(:disabled) { opacity: 0.92; transform: translateY(-1px); }
+.auth-btn:disabled { background: #c5b9b0; cursor: not-allowed; box-shadow: none; }
+.auth-link {
+  display: inline-block;
+  margin-left: 14px;
+  background: none;
+  border: none;
+  color: var(--color-info);
+  font-size: 0.85rem;
+  font-family: var(--font-body);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  padding: 4px;
+}
+.auth-link:hover { color: var(--color-mid); }
+.auth-status {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--color-success);
+  display: inline-block;
+}
+
 /* ── トースト通知 ── */
 #toast {
   position: fixed;

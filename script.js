@@ -13,6 +13,203 @@ async function uploadCertImage(inputId, label) {
     return data.publicUrl;
 }
 
+// ══════════════════════════════════
+// ログイン（メールOTP）／プロフィール自動入力・保存
+// ══════════════════════════════════
+let currentUser = null;   // ログイン中のユーザー（未ログインは null）
+let pendingEmail = "";    // 確認コード送信先のメール
+
+// 入力欄への安全なセット（値が空/未定義なら触らない）
+function setVal(id, v) {
+    const el = document.getElementById(id);
+    if (el && v !== null && v !== undefined && v !== "") el.value = v;
+}
+function setRadio(name, v) {
+    if (!v) return;
+    const el = document.querySelector(`input[name="${name}"][value="${v}"]`);
+    if (el) el.checked = true;
+}
+
+// 確認コードを送信
+async function authSendCode() {
+    const email = (document.getElementById("auth_email").value || "").trim();
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+        showToast("メールアドレスを正しく入力してください。", "error");
+        return;
+    }
+    const btn = document.getElementById("auth-send-btn");
+    btn.disabled = true; btn.textContent = "送信中...";
+    try {
+        const { error } = await _supabase.auth.signInWithOtp({
+            email,
+            options: { shouldCreateUser: true },
+        });
+        if (error) throw error;
+        pendingEmail = email;
+        document.getElementById("auth-step-email").style.display = "none";
+        document.getElementById("auth-step-code").style.display = "block";
+        document.getElementById("auth-sent-to").textContent = `${email} に確認コードを送りました。届かない場合は迷惑メールフォルダもご確認ください。`;
+        document.getElementById("auth_code").focus();
+        showToast("確認コードをメールで送信しました。", "success");
+    } catch (e) {
+        console.error("コード送信エラー:", e);
+        showToast("コードの送信に失敗しました。時間をおいて再度お試しください。", "error");
+    } finally {
+        btn.disabled = false; btn.textContent = "確認コードを送る";
+    }
+}
+
+// 確認コードを検証してログイン
+async function authVerifyCode() {
+    const token = (document.getElementById("auth_code").value || "").trim();
+    if (!/^\d{6}$/.test(token)) {
+        showToast("6桁の数字を入力してください。", "error");
+        return;
+    }
+    const btn = document.getElementById("auth-verify-btn");
+    btn.disabled = true; btn.textContent = "確認中...";
+    try {
+        const { data, error } = await _supabase.auth.verifyOtp({
+            email: pendingEmail,
+            token,
+            type: "email",
+        });
+        if (error) throw error;
+        await onLoggedIn(data.user);
+    } catch (e) {
+        console.error("コード検証エラー:", e);
+        showToast("コードが正しくないか、有効期限が切れています。もう一度お試しください。", "error");
+    } finally {
+        btn.disabled = false; btn.textContent = "ログイン";
+    }
+}
+
+// ログアウト
+async function authLogout() {
+    await _supabase.auth.signOut();
+    location.reload();
+}
+
+// ログイン完了時：表示切り替え＋前回情報の自動入力
+async function onLoggedIn(user) {
+    currentUser = user;
+    document.getElementById("auth-loggedout").style.display = "none";
+    document.getElementById("auth-loggedin").style.display = "block";
+    document.getElementById("auth-email-label").textContent = user.email || "";
+
+    let loaded = false;
+
+    // 飼い主プロフィール
+    try {
+        const { data: prof } = await _supabase
+            .from("profiles").select("*").eq("id", user.id).maybeSingle();
+        if (prof) {
+            setVal("owner_name",      prof.owner_name);
+            setVal("owner_kana",      prof.owner_kana);
+            setVal("phone",           prof.phone);
+            setVal("address",         prof.address);
+            setVal("emergency_phone", prof.emergency_phone);
+            setVal("trigger_text",    prof.trigger_text);
+            loaded = true;
+        }
+    } catch (e) { console.warn("プロフィール取得に失敗", e); }
+
+    // わんちゃん（MVPは最新1頭のみ自動入力）
+    try {
+        const { data: pets } = await _supabase
+            .from("pets").select("*").eq("owner_id", user.id)
+            .order("updated_at", { ascending: false }).limit(1);
+        const pet = pets && pets[0];
+        if (pet) {
+            setVal("dog_name",         pet.dog_name);
+            setVal("breed",            pet.breed);
+            setVal("dog_birthday",     pet.dog_birthday);
+            setVal("dog_weight",       pet.dog_weight);
+            setVal("regular_hospital", pet.regular_hospital);
+            setVal("allergies",        pet.allergies);
+            setVal("favorite_spots",   pet.favorite_spots);
+            setVal("dislike_spots",    pet.dislike_spots);
+            setVal("medical_history",  pet.medical_history);
+            setRadio("gender",      pet.gender);
+            setRadio("spay_neuter", pet.spay_neuter);
+            loaded = true;
+        }
+    } catch (e) { console.warn("わんちゃん情報取得に失敗", e); }
+
+    if (loaded) {
+        showToast("前回の情報を読み込みました。変更があればその場で修正できます。", "success");
+    } else {
+        showToast("ログインしました。今回の内容は次回のために保存されます。", "success");
+    }
+}
+
+// 予約成功後：入力内容をプロフィール／わんちゃんに保存（次回の自動入力用）
+// ※ 安全管理のためワクチン情報・証明書画像は保存対象に含めません（毎回確認）。
+async function saveProfileFromForm() {
+    if (!currentUser) return;
+    const uid = currentUser.id;
+    const now = new Date().toISOString();
+    try {
+        await _supabase.from("profiles").upsert({
+            id:              uid,
+            owner_name:      document.getElementById("owner_name").value.trim(),
+            owner_kana:      document.getElementById("owner_kana").value.trim(),
+            phone:           document.getElementById("phone").value.trim(),
+            address:         document.getElementById("address").value.trim(),
+            emergency_phone: document.getElementById("emergency_phone").value.trim(),
+            trigger_text:    document.getElementById("trigger_text").value.trim(),
+            updated_at:      now,
+        });
+
+        const petData = {
+            owner_id:         uid,
+            dog_name:         document.getElementById("dog_name").value.trim(),
+            breed:            document.getElementById("breed").value.trim(),
+            dog_birthday:     document.getElementById("dog_birthday").value.trim(),
+            dog_weight:       parseFloat(document.getElementById("dog_weight").value) || null,
+            gender:           document.querySelector('input[name="gender"]:checked')?.value,
+            regular_hospital: document.getElementById("regular_hospital").value.trim(),
+            allergies:        document.getElementById("allergies").value.trim(),
+            favorite_spots:   document.getElementById("favorite_spots").value.trim(),
+            dislike_spots:    document.getElementById("dislike_spots").value.trim(),
+            medical_history:  document.getElementById("medical_history").value.trim(),
+            spay_neuter:      document.querySelector('input[name="spay_neuter"]:checked')?.value,
+            updated_at:       now,
+        };
+        // MVPは1頭運用：既存があれば更新、なければ新規
+        const { data: existing } = await _supabase
+            .from("pets").select("id").eq("owner_id", uid).limit(1);
+        if (existing && existing.length) {
+            await _supabase.from("pets").update(petData).eq("id", existing[0].id);
+        } else {
+            await _supabase.from("pets").insert(petData);
+        }
+    } catch (e) {
+        // 保存失敗は予約完了を妨げない（記録のみ）
+        console.warn("プロフィール保存に失敗（予約は完了しています）", e);
+    }
+}
+
+// 認証UIの初期化（既存セッションの復元＋ボタン配線）
+async function initAuth() {
+    document.getElementById("auth-send-btn")?.addEventListener("click", authSendCode);
+    document.getElementById("auth-verify-btn")?.addEventListener("click", authVerifyCode);
+    document.getElementById("auth-logout-btn")?.addEventListener("click", authLogout);
+    document.getElementById("auth-back-btn")?.addEventListener("click", () => {
+        document.getElementById("auth-step-code").style.display = "none";
+        document.getElementById("auth-step-email").style.display = "block";
+    });
+    // Enterキーでの誤送信を避けつつ、コード欄はEnterで確定できるように
+    document.getElementById("auth_code")?.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") { e.preventDefault(); authVerifyCode(); }
+    });
+
+    try {
+        const { data: { session } } = await _supabase.auth.getSession();
+        if (session && session.user) await onLoggedIn(session.user);
+    } catch (e) { console.warn("セッション復元に失敗", e); }
+}
+
 // ── トースト ──
 function showToast(message, type = "success") {
     const toast = document.getElementById("toast");
@@ -327,6 +524,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     const form       = document.getElementById("reservation-form");
     const submitBtn  = document.getElementById("submit-btn");
 
+    // ログインUIを初期化（既存セッションがあれば自動入力）
+    await initAuth();
+
     // スケジュール設定を先に読み込む
     await loadScheduleSettings();
 
@@ -443,6 +643,9 @@ document.addEventListener("DOMContentLoaded", async () => {
             reservation_time:    timeSelect.value,
         };
 
+        // ログイン中のみアカウントに紐づけ（未ログインは列を付けない＝従来通り）
+        if (currentUser) reservationData.user_id = currentUser.id;
+
         try {
             const { error } = await _supabase.from("reservations").insert([reservationData]);
             if (error) {
@@ -460,7 +663,11 @@ document.addEventListener("DOMContentLoaded", async () => {
                 document.getElementById("comp-dog").textContent  = document.getElementById("dog_name").value + "ちゃん";
                 document.getElementById("comp-date").textContent = `${y}年${Number(m)}月${Number(d)}日（${dow}）`;
                 document.getElementById("comp-time").textContent = timeLabel;
+                // ログイン中なら、今回の入力を次回のために保存
+                await saveProfileFromForm();
+
                 form.style.display = "none";
+                document.getElementById("auth-card").style.display = "none";
                 document.getElementById("complete-screen").style.display = "block";
                 window.scrollTo({ top: 0, behavior: "smooth" });
             }

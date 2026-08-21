@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ご予約フォーム — ANELLA CAFE 南浦和店</title>
-    <link rel="stylesheet" href="style.css?v=20260731a">
+    <link rel="stylesheet" href="style.css?v=20260821a">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
@@ -15,6 +15,44 @@
     </header>
 
     <main class="container">
+
+        <!-- ── ログイン（任意） ── -->
+        <div class="card auth-card" id="auth-card">
+            <h2 class="section-heading">ログイン（かんたん・任意）</h2>
+            <p class="auth-desc">
+                ログインすると、次回から<strong>飼い主様・わんちゃんの情報が自動で入力</strong>されます。<br>
+                初めての方も、メールアドレスに届く<strong>6桁の確認コード</strong>を入れるだけ。パスワードは不要です。<br>
+                <span class="auth-note">※ ログインせずにこのままご予約いただくこともできます。</span>
+            </p>
+
+            <!-- 未ログイン状態 -->
+            <div id="auth-loggedout">
+                <!-- 手順1: メール入力 -->
+                <div id="auth-step-email">
+                    <div class="form-group">
+                        <label for="auth_email">メールアドレス</label>
+                        <input type="email" id="auth_email" autocomplete="email" placeholder="例：example@email.com">
+                    </div>
+                    <button type="button" id="auth-send-btn" class="auth-btn">確認コードを送る</button>
+                </div>
+                <!-- 手順2: コード入力 -->
+                <div id="auth-step-code" style="display:none;">
+                    <div class="form-group">
+                        <label for="auth_code">メールに届いた6桁の確認コード</label>
+                        <input type="text" id="auth_code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="例：123456">
+                        <p class="auth-note" id="auth-sent-to"></p>
+                    </div>
+                    <button type="button" id="auth-verify-btn" class="auth-btn">ログイン</button>
+                    <button type="button" id="auth-back-btn" class="auth-link">メールアドレスを入れ直す</button>
+                </div>
+            </div>
+
+            <!-- ログイン済み状態 -->
+            <div id="auth-loggedin" style="display:none;">
+                <p class="auth-status">✅ <span id="auth-email-label"></span> でログイン中</p>
+                <button type="button" id="auth-logout-btn" class="auth-link">ログアウト</button>
+            </div>
+        </div>
 
         <form id="reservation-form" novalidate>
 
@@ -382,6 +420,6 @@
     <!-- トースト通知 -->
     <div id="toast"></div>
 
-    <script src="script.js?v=20260731a"></script>
+    <script src="script.js?v=20260821a"></script>
 </body>
 </html>
