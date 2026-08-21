@@ -41,8 +41,10 @@ var CONFIG = {
 
   // 保存先フォルダのID（このフォルダの中に1つのPDFを保存します）
   // フォルダを開いたときのURL .../folders/ここがID の部分をコピー
-  // 空のままなら、マイドライブ直下に「工賃明細」フォルダを作って保存します。
-  // 保存先：マイドライブ ＞ 利用者勤怠 ＞ 工賃明細
+  // ※このフォルダは「スクリプトの実行アカウント」から見える必要があります。
+  //   別アカウントのフォルダの場合は、実行アカウントに「編集者」で共有してください。
+  //   アクセスできないときは（黙って別の場所に保存せず）エラーで知らせます。
+  // 保存先：利用者勤怠 ＞ 工賃明細
   SAVE_FOLDER_ID: '1zkZrQkcV7XGVxadShtPW6C_ob-In-YY-',
 
   // 明細に印字する事業所名（発行元）
@@ -156,8 +158,14 @@ function issueWageStatements() {
                      .getAs('application/pdf')
                      .setName(fileName);
 
-  // 保存先フォルダ（指定があればそのフォルダ、なければマイドライブ直下に作成）
-  var folder = getSaveFolder_();
+  // 保存先フォルダ（別アカウントのフォルダは「編集者」共有が必要）
+  var folder;
+  try {
+    folder = getSaveFolder_();
+  } catch (e) {
+    ui.alert('保存先フォルダのエラー\n\n' + e.message);
+    return;
+  }
 
   // 同名ファイルがあれば上書き（古いものはゴミ箱へ）
   var existing = folder.getFilesByName(fileName);
@@ -171,6 +179,8 @@ function issueWageStatements() {
     '対象月: ' + targetPeriod + '\n' +
     '人数: ' + order.length + '名（1名1ページ）\n' +
     'ファイル: ' + fileName + '\n\n' +
+    '保存先フォルダ: ' + folder.getName() + '\n' +
+    '実行アカウント: ' + currentUserEmail_() + '\n\n' +
     'PDF URL:\n' + file.getUrl()
   );
 }
@@ -265,15 +275,34 @@ function buildStatementPageHtml_(userName, rows, idx, targetPeriod) {
 
 /* ===== 補助関数 ===== */
 
+/** 保存先フォルダを返す。指定フォルダにアクセスできない場合は、
+ *  黙って別の場所に保存せず、原因（＝共有すべき実行アカウント）が分かるエラーを出す。 */
 function getSaveFolder_() {
-  if (CONFIG.SAVE_FOLDER_ID) {
-    try { return DriveApp.getFolderById(CONFIG.SAVE_FOLDER_ID); }
-    catch (e) { /* IDが不正ならマイドライブに作成 */ }
+  if (!CONFIG.SAVE_FOLDER_ID) {
+    throw new Error('保存先フォルダIDが未設定です（CONFIG.SAVE_FOLDER_ID を設定してください）。');
   }
-  var root = DriveApp.getRootFolder();
-  var it = root.getFoldersByName('工賃明細');
-  if (it.hasNext()) return it.next();
-  return root.createFolder('工賃明細');
+  try {
+    return DriveApp.getFolderById(CONFIG.SAVE_FOLDER_ID);
+  } catch (e) {
+    throw new Error(
+      '指定した保存先フォルダにアクセスできません。\n' +
+      '（別のGoogleアカウントのフォルダの可能性があります）\n\n' +
+      '■ このスクリプトの実行アカウント：\n  ' + currentUserEmail_() + '\n\n' +
+      '■ 設定中のフォルダID：\n  ' + CONFIG.SAVE_FOLDER_ID + '\n\n' +
+      '対処：保存先フォルダを、上の実行アカウントに「編集者」で共有してください。\n' +
+      '共有後にもう一度「③ 工賃明細を発行」を実行すれば保存できます。'
+    );
+  }
+}
+
+/** 実行中のGoogleアカウントのメールアドレスを返す（取得できない場合は案内文） */
+function currentUserEmail_() {
+  try {
+    var em = Session.getActiveUser().getEmail();
+    return em || '(自動取得できませんでした。Drive右上のアカウント切替でご確認ください)';
+  } catch (e) {
+    return '(自動取得できませんでした)';
+  }
 }
 
 function toNumber_(v) {
