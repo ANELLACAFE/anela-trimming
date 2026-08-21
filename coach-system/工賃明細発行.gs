@@ -16,7 +16,7 @@
  *   3. 既存の「コード.gs」も、メニューに③を足した全文へ丸ごと貼り替えて保存
  *   4. 下の CONFIG（SAVE_FOLDER_ID・SHOP_NAME）は設定済み
  *   5. スプレッドシートを再読み込み → メニュー「工賃システム」→「③ 工賃明細を発行（PDF・全員分）」
- *   6. 対象月を番号で選ぶ → PDFが指定フォルダに保存されます
+ *   6. 出てきた画面で対象月をクリックで選び「この月で発行する」→ PDFが指定フォルダに保存されます
  *
  *   ※このファイルは onOpen を持ちません。メニューの③は「コード.gs」の onOpen 側に
  *     統合済みです（onOpen が2つあるとメニューが片方しか出ないため）。
@@ -62,127 +62,131 @@ var CONFIG = {
  *   「コード.gs」の onOpen 側に統合済みです。両ファイルを全文で貼り替えれば動きます。
  */
 
-/** メイン処理：選んだ対象月の全利用者分を1つのPDFにまとめて発行 */
+/** メニュー本体：対象月の選択ダイアログを開く（クリックで選ぶ→手入力ミスなし） */
 function issueWageStatements() {
-  var ui = SpreadsheetApp.getUi();
+  var info = readPeriods_();
+  if (info.error) { SpreadsheetApp.getUi().alert(info.error); return; }
+  if (!info.periods.length) { SpreadsheetApp.getUi().alert('対象期間のデータが見つかりませんでした。'); return; }
+  var html = HtmlService.createHtmlOutput(getStatementDialogHtml_(info.periods))
+    .setWidth(470).setHeight(470);
+  SpreadsheetApp.getUi().showModalDialog(html, '工賃明細の発行');
+}
+
+/** 「工賃履歴」から対象期間の一覧（新しい順）を返す */
+function readPeriods_() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
-
-  // データ読み込み
   var sheet = ss.getSheetByName(CONFIG.DATA_SHEET_NAME);
-  if (!sheet) {
-    ui.alert('シート「' + CONFIG.DATA_SHEET_NAME + '」が見つかりません。CONFIG.DATA_SHEET_NAME を確認してください。');
-    return;
-  }
+  if (!sheet) return { error: 'シート「' + CONFIG.DATA_SHEET_NAME + '」が見つかりません。CONFIG.DATA_SHEET_NAME を確認してください。', periods: [] };
   var values = sheet.getDataRange().getValues();
-  if (values.length <= CONFIG.HEADER_ROW) {
-    ui.alert('データがありません。まず工賃計算を実行してください。');
-    return;
-  }
-
-  var header = values[CONFIG.HEADER_ROW - 1];
-  var idx = resolveColumns_(header);
-  if (idx.userName < 0) {
-    ui.alert('氏名の列「' + CONFIG.COL.userName + '」が見つかりません。見出し名を確認してください。');
-    return;
-  }
-  if (idx.amount < 0) {
-    ui.alert('工賃の列「' + CONFIG.COL.amount + '」が見つかりません。見出し名を確認してください。');
-    return;
-  }
-  if (idx.period < 0) {
-    ui.alert('対象期間の列「' + CONFIG.COL.period + '」が見つかりません。見出し名を確認してください。');
-    return;
-  }
-
-  // 対象期間の一覧（出現順→新しいものを上に）を作り、番号で選んでもらう
-  var periods = [];
-  var seen = {};
+  if (values.length <= CONFIG.HEADER_ROW) return { error: 'データがありません。まず工賃計算を実行してください。', periods: [] };
+  var idx = resolveColumns_(values[CONFIG.HEADER_ROW - 1]);
+  if (idx.userName < 0) return { error: '氏名の列「' + CONFIG.COL.userName + '」が見つかりません。見出し名を確認してください。', periods: [] };
+  if (idx.amount < 0)   return { error: '工賃の列「' + CONFIG.COL.amount + '」が見つかりません。見出し名を確認してください。', periods: [] };
+  if (idx.period < 0)   return { error: '対象期間の列「' + CONFIG.COL.period + '」が見つかりません。見出し名を確認してください。', periods: [] };
+  var periods = [], seen = {};
   for (var r = CONFIG.HEADER_ROW; r < values.length; r++) {
     var p = String(values[r][idx.period] || '').trim();
     if (!p || seen[p]) continue;
-    seen[p] = true;
-    periods.push(p);
-  }
-  if (periods.length === 0) {
-    ui.alert('対象期間のデータが見つかりませんでした。');
-    return;
+    seen[p] = true; periods.push(p);
   }
   periods.reverse(); // 新しい期間を先頭に
+  return { error: '', periods: periods };
+}
 
-  var listText = '';
-  for (var i = 0; i < periods.length; i++) {
-    listText += (i + 1) + ') ' + periods[i] + '\n';
-  }
-  var res = ui.prompt(
-    '工賃明細の発行',
-    '発行する対象月を番号で選んでください（空欄なら 1 番）:\n\n' + listText,
-    ui.ButtonSet.OK_CANCEL
-  );
-  if (res.getSelectedButton() !== ui.Button.OK) return;
+/** ダイアログから呼ばれる：指定された対象期間で全員分PDFを発行して保存する */
+function generateStatementsForPeriod(targetPeriod) {
+  targetPeriod = String(targetPeriod || '').trim();
+  if (!targetPeriod) return { ok: false, message: '対象月が選ばれていません。' };
 
-  var pick = String(res.getResponseText() || '1').trim();
-  var num = parseInt(pick, 10);
-  if (isNaN(num) || num < 1 || num > periods.length) {
-    ui.alert('番号「' + pick + '」が正しくありません。1〜' + periods.length + ' の番号を入力してください。');
-    return;
-  }
-  var targetPeriod = periods[num - 1];
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName(CONFIG.DATA_SHEET_NAME);
+  if (!sheet) return { ok: false, message: 'シート「' + CONFIG.DATA_SHEET_NAME + '」が見つかりません。' };
+  var values = sheet.getDataRange().getValues();
+  var idx = resolveColumns_(values[CONFIG.HEADER_ROW - 1]);
 
   // 対象期間の行だけを利用者ごとにまとめる（通常は1名1行）
-  var groups = {};   // userName -> [rows]
-  var order = [];    // 出現順を保持
-  for (var r2 = CONFIG.HEADER_ROW; r2 < values.length; r2++) {
-    var row = values[r2];
+  var groups = {}, order = [];
+  for (var r = CONFIG.HEADER_ROW; r < values.length; r++) {
+    var row = values[r];
     if (String(row[idx.period] || '').trim() !== targetPeriod) continue;
     var name = String(row[idx.userName] || '').trim();
     if (!name || name === '合計') continue;
     if (!groups[name]) { groups[name] = []; order.push(name); }
     groups[name].push(row);
   }
-  if (order.length === 0) {
-    ui.alert('対象月「' + targetPeriod + '」の利用者が見つかりませんでした。');
-    return;
-  }
+  if (order.length === 0) return { ok: false, message: '対象月「' + targetPeriod + '」の利用者が見つかりませんでした。' };
 
-  // 全員分のページを1つのHTMLに連結（1名 = 1ページ）
+  // 全員分のページを1つのHTMLに連結（1名 = 1ページ）→ PDF化
   var pages = [];
   for (var j = 0; j < order.length; j++) {
-    var name2 = order[j];
-    pages.push(buildStatementPageHtml_(name2, groups[name2], idx, targetPeriod));
+    pages.push(buildStatementPageHtml_(order[j], groups[order[j]], idx, targetPeriod));
   }
   var html = wrapDocument_(pages.join('\n'));
-
-  // 1つのPDFに変換
   var fileName = '工賃明細_' + sanitizeFileName_(targetPeriod) + '.pdf';
-  var pdf = Utilities.newBlob(html, 'text/html', 'wage.html')
-                     .getAs('application/pdf')
-                     .setName(fileName);
+  var pdf = Utilities.newBlob(html, 'text/html', 'wage.html').getAs('application/pdf').setName(fileName);
 
   // 保存先フォルダ（別アカウントのフォルダは「編集者」共有が必要）
   var folder;
-  try {
-    folder = getSaveFolder_();
-  } catch (e) {
-    ui.alert('保存先フォルダのエラー\n\n' + e.message);
-    return;
-  }
+  try { folder = getSaveFolder_(); }
+  catch (e) { return { ok: false, message: e.message }; }
 
   // 同名ファイルがあれば上書き（古いものはゴミ箱へ）
   var existing = folder.getFilesByName(fileName);
   while (existing.hasNext()) { existing.next().setTrashed(true); }
-
   var file = folder.createFile(pdf);
 
-  ss.toast(order.length + '名分の工賃明細を1ファイルで発行しました。', '工賃明細', 5);
-  ui.alert(
-    '発行が完了しました。\n\n' +
-    '対象月: ' + targetPeriod + '\n' +
-    '人数: ' + order.length + '名（1名1ページ）\n' +
-    'ファイル: ' + fileName + '\n\n' +
-    '保存先フォルダ: ' + folder.getName() + '\n' +
-    '実行アカウント: ' + currentUserEmail_() + '\n\n' +
-    'PDF URL:\n' + file.getUrl()
-  );
+  return {
+    ok: true, period: targetPeriod, count: order.length, fileName: fileName,
+    folderName: folder.getName(), account: currentUserEmail_(), url: file.getUrl()
+  };
+}
+
+/** 対象月えらびダイアログのHTML（ラジオ選択＋発行ボタン。手入力しないのでミスが減る） */
+function getStatementDialogHtml_(periods) {
+  var items = '';
+  for (var i = 0; i < periods.length; i++) {
+    var checked = (i === 0) ? 'checked' : '';
+    items += '<label class="opt"><input type="radio" name="period" value="' + escAttr_(periods[i]) + '" ' + checked + '><span>' + esc_(periods[i]) + '</span></label>';
+  }
+  return `
+<!DOCTYPE html><html><head><base target="_top"><meta charset="utf-8">
+<style>
+  body{font-family:"Hiragino Kaku Gothic ProN","Yu Gothic","Noto Sans JP",sans-serif;margin:0;padding:18px;color:#29261f;font-size:14px;line-height:1.6;}
+  h2{font-size:15px;margin:0 0 10px;}
+  .list{max-height:230px;overflow:auto;margin-bottom:14px;}
+  .opt{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid #e0d9cc;border-radius:8px;margin:6px 0;cursor:pointer;}
+  .opt:hover{background:#f4f7f6;}
+  .opt input{width:18px;height:18px;flex:none;}
+  button{padding:10px 22px;font-size:14px;font-weight:700;color:#fff;background:#147065;border:0;border-radius:8px;cursor:pointer;}
+  button:disabled{background:#b7c3c0;cursor:default;}
+  #status{margin-top:14px;color:#555;min-height:20px;white-space:pre-wrap;}
+  #status.warn{color:#b23b3b;}
+  .ok{color:#147065;font-weight:700;}
+  a.btn{display:inline-block;margin-top:6px;color:#147065;font-weight:700;text-decoration:none;}
+</style></head><body>
+  <h2>発行する対象月を選んでください</h2>
+  <div class="list">${items}</div>
+  <button id="go" onclick="run()">この月で発行する</button>
+  <div id="status"></div>
+<script>
+  function run(){
+    var els=document.getElementsByName('period'), v=null;
+    for(var i=0;i<els.length;i++){ if(els[i].checked){ v=els[i].value; break; } }
+    var s=document.getElementById('status');
+    if(!v){ s.className='warn'; s.textContent='対象月を選んでください。'; return; }
+    document.getElementById('go').disabled=true;
+    s.className=''; s.textContent='PDFを作成しています…少々お待ちください。';
+    google.script.run.withSuccessHandler(done).withFailureHandler(fail).generateStatementsForPeriod(v);
+  }
+  function done(res){
+    var s=document.getElementById('status'); document.getElementById('go').disabled=false;
+    if(!res.ok){ s.className='warn'; s.textContent=res.message; return; }
+    s.className='';
+    s.innerHTML='<span class="ok">発行が完了しました。</span><br>対象月：'+esc(res.period)+'<br>人数：'+res.count+'名（1名1ページ）<br>ファイル：'+esc(res.fileName)+'<br>保存先：'+esc(res.folderName)+'<br>実行アカウント：'+esc(res.account)+'<br><a class="btn" target="_blank" href="'+res.url+'">▶ PDFを開く</a>';
+  }
+  function fail(e){ var s=document.getElementById('status'); s.className='warn'; s.textContent='エラー：'+e.message; document.getElementById('go').disabled=false; }
+  function esc(t){ var d=document.createElement('div'); d.textContent=(t==null?'':t); return d.innerHTML; }
+</script></body></html>`;
 }
 
 /** 見出し行から各項目の列インデックスを解決（見つからなければ -1） */
@@ -320,6 +324,11 @@ function money_(v) {
 function esc_(v) {
   return String(v === null || v === undefined ? '' : v)
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+/** HTML属性値用のエスケープ（esc_ に加えてダブルクオートも変換） */
+function escAttr_(v) {
+  return esc_(v).replace(/"/g, '&quot;');
 }
 
 function sanitizeFileName_(name) {
