@@ -7,8 +7,9 @@
  * Google ドライブの指定フォルダへ保存します。
  *
  * ・1名 = 1ページ（改ページで区切り）→ 印刷して各人へ配布できます。
- * ・B型工賃は雑所得（源泉/社保/雇用保険の天引きなし）のため、
- *   工賃 ＝ 振込予定額 として表示します（控除欄なし）。
+ * ・B型工賃は雑所得（源泉/社保/雇用保険の天引きなし）です。
+ * ・希望者に提供した食事代（1食100円など）は「食事代」シートの回数を読み、
+ *   工賃 − 食事代 ＝ 差引振込額 として表示します。
  *
  * 使い方:
  *   1. 工賃システムのスプレッドシートを開く →「拡張機能」→「Apps Script」
@@ -51,7 +52,18 @@ var CONFIG = {
   SHOP_NAME: 'ANELLA CAFE 南浦和店',
 
   // 金額の通貨記号
-  CURRENCY: '¥'
+  CURRENCY: '¥',
+
+  // 食事代（工賃システムの「食事代」シートから食事回数を読み、工賃から差し引きます）
+  MEAL: {
+    SHEET_NAME: '食事代',   // 食事回数の入力シート名
+    PRICE: 100,             // 1食あたりの金額（円）
+    COL: {
+      period:   '対象期間',
+      userName: '氏名',
+      count:    '食事回数'
+    }
+  }
 };
 /** ===== 設定ここまで ===== */
 
@@ -116,10 +128,13 @@ function generateStatementsForPeriod(targetPeriod) {
   }
   if (order.length === 0) return { ok: false, message: '対象月「' + targetPeriod + '」の利用者が見つかりませんでした。' };
 
+  // 食事回数（対象期間ぶん）を読み込む：氏名 → 回数
+  var mealMap = readMealCounts_(ss, targetPeriod);
+
   // 全員分のページを1つのHTMLに連結（1名 = 1ページ）→ PDF化
   var pages = [];
   for (var j = 0; j < order.length; j++) {
-    pages.push(buildStatementPageHtml_(order[j], groups[order[j]], idx, targetPeriod));
+    pages.push(buildStatementPageHtml_(order[j], groups[order[j]], idx, targetPeriod, mealMap));
   }
   var html = wrapDocument_(pages.join('\n'));
   var fileName = '工賃明細_' + sanitizeFileName_(targetPeriod) + '.pdf';
@@ -225,6 +240,8 @@ function wrapDocument_(pagesHtml) {
   'th,td{border:1px solid #bbb;padding:9px 12px;}' +
   'th{background:#f0f0f0;text-align:left;font-weight:bold;width:40%;}' +
   '.num{text-align:right;white-space:nowrap;}' +
+  '.sub th{background:#eef1f7;}' +
+  '.sub td{font-weight:bold;}' +
   '.pay th{background:#333;color:#fff;font-size:15px;}' +
   '.pay td{background:#fafafa;font-size:16px;font-weight:bold;}' +
   '.note{margin-top:22px;color:#666;font-size:11px;line-height:1.7;}' +
@@ -235,22 +252,27 @@ function wrapDocument_(pagesHtml) {
 
 /** 1利用者分の明細ページ（PDFの1ページ）を組み立て
  *  1名につき対象月1行を想定。万一複数行あっても工賃を合算します。 */
-function buildStatementPageHtml_(userName, rows, idx, targetPeriod) {
+function buildStatementPageHtml_(userName, rows, idx, targetPeriod, mealMap) {
   var showWork = idx.workTime >= 0;
   var showUnit = idx.unitPrice >= 0;
 
-  var totalAmount = 0;
+  var wageTotal = 0;
   var workText = '';
   var unitText = '';
   for (var i = 0; i < rows.length; i++) {
     var row = rows[i];
-    totalAmount += toNumber_(row[idx.amount]);
+    wageTotal += toNumber_(row[idx.amount]);
     if (i === 0) {
       if (showWork) workText = esc_(row[idx.workTime]);
       if (showUnit) unitText = money_(row[idx.unitPrice]);
     }
   }
   var multi = rows.length > 1; // 複数行あるときは単価・時間の単純表示を控える
+
+  // 食事代（食事回数 × 単価）を工賃から差し引く
+  var mealCount = (mealMap && mealMap[normName_(userName)]) || 0;
+  var mealFee = mealCount * CONFIG.MEAL.PRICE;
+  var payable = wageTotal - mealFee;
 
   var issuedAt = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy/MM/dd');
 
@@ -261,7 +283,11 @@ function buildStatementPageHtml_(userName, rows, idx, targetPeriod) {
   if (showUnit && !multi) {
     tableRows += '<tr><th>時給</th><td class="num">' + unitText + '</td></tr>';
   }
-  tableRows += '<tr class="pay"><th>工賃（振込予定額）</th><td class="num">' + money_(totalAmount) + '</td></tr>';
+  tableRows += '<tr class="sub"><th>工賃</th><td class="num">' + money_(wageTotal) + '</td></tr>';
+  if (mealFee > 0) {
+    tableRows += '<tr><th>食事代（' + CONFIG.MEAL.PRICE + '円 × ' + mealCount + '回）</th><td class="num">− ' + money_(mealFee) + '</td></tr>';
+  }
+  tableRows += '<tr class="pay"><th>差引振込額</th><td class="num">' + money_(payable) + '</td></tr>';
 
   return '' +
   '<div class="page">' +
@@ -271,10 +297,37 @@ function buildStatementPageHtml_(userName, rows, idx, targetPeriod) {
   '<div class="to"><b>' + esc_(userName) + '</b>　様</div>' +
   '<table><tbody>' + tableRows + '</tbody></table>' +
   '<div class="note">' +
-  '※この工賃は就労継続支援B型における作業に対する工賃です（非雇用・雑所得のため源泉徴収等の天引きはありません）。<br>' +
+  '※工賃は就労継続支援B型における作業に対する工賃です（非雇用・雑所得のため源泉徴収等の天引きはありません）。<br>' +
+  (mealFee > 0 ? '※食事代（1食' + CONFIG.MEAL.PRICE + '円）は、ご希望により提供した食事の実費として工賃から差し引いています。<br>' : '') +
   '本明細に関するお問い合わせは ' + esc_(CONFIG.SHOP_NAME) + ' までご連絡ください。' +
   '</div>' +
   '</div>';
+}
+
+/** 「食事代」シートから、対象期間の食事回数を読み、氏名（空白除去）→回数 の対応表を返す */
+function readMealCounts_(ss, targetPeriod) {
+  var map = {};
+  var conf = CONFIG.MEAL;
+  if (!conf || !conf.SHEET_NAME) return map;
+  var sh = ss.getSheetByName(conf.SHEET_NAME);
+  if (!sh || sh.getLastRow() < 2) return map;
+  var values = sh.getDataRange().getValues();
+  var header = values[0];
+  function find(nm) {
+    for (var c = 0; c < header.length; c++) {
+      if (String(header[c]).trim() === nm) return c;
+    }
+    return -1;
+  }
+  var pCol = find(conf.COL.period), nCol = find(conf.COL.userName), cCol = find(conf.COL.count);
+  if (pCol < 0 || nCol < 0 || cCol < 0) return map;
+  for (var r = 1; r < values.length; r++) {
+    if (String(values[r][pCol] || '').trim() !== targetPeriod) continue;
+    var nm = normName_(values[r][nCol]);
+    if (!nm) continue;
+    map[nm] = toNumber_(values[r][cCol]);
+  }
+  return map;
 }
 
 /* ===== 補助関数 ===== */
@@ -329,6 +382,11 @@ function esc_(v) {
 /** HTML属性値用のエスケープ（esc_ に加えてダブルクオートも変換） */
 function escAttr_(v) {
   return esc_(v).replace(/"/g, '&quot;');
+}
+
+/** 名前照合用：全角・半角の空白をすべて除去（工賃システム側と同じ規則） */
+function normName_(s) {
+  return String(s === null || s === undefined ? '' : s).replace(/[\s　]/g, '');
 }
 
 function sanitizeFileName_(name) {
