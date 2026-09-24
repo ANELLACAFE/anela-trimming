@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ご予約フォーム — ANELLA CAFE 南浦和店</title>
-    <link rel="stylesheet" href="style.css?v=20260824a">
+    <link rel="stylesheet" href="style.css?v=20260924a">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
@@ -51,6 +51,15 @@
             <div id="auth-loggedin" style="display:none;">
                 <p class="auth-status">✅ <span id="auth-email-label"></span> でログイン中</p>
                 <button type="button" id="auth-logout-btn" class="auth-link">ログアウト</button>
+
+                <!-- マイページ：あなたのご予約 -->
+                <div id="mypage" class="mypage">
+                    <h3 class="mypage-heading">📋 あなたのご予約</h3>
+                    <div id="mypage-list" class="mypage-list">
+                        <p class="mypage-empty">読み込み中…</p>
+                    </div>
+                    <p class="auth-note mypage-foot">※ ご予約の変更・キャンセルは、当面お電話でお願いいたします。</p>
+                </div>
             </div>
         </div>
 
@@ -420,6 +429,6 @@
     <!-- トースト通知 -->
     <div id="toast"></div>
 
-    <script src="script.js?v=20260824a"></script>
+    <script src="script.js?v=20260924a"></script>
 </body>
 </html>

@@ -141,6 +141,81 @@ async function onLoggedIn(user) {
     } else {
         showToast("ログインしました。今回の内容は次回のために保存されます。", "success");
     }
+
+    // マイページ（あなたのご予約一覧）を表示
+    renderMyPage();
+}
+
+// ── マイページ用の表示ヘルパー ──
+function courseLabelJa(c) {
+    return c === "trimming" ? "トリミング" : c === "shampoo" ? "シャンプー" : (c || "—");
+}
+function timeRangeLabelJa(t) {
+    if (!t) return "—";
+    if (t.startsWith("11")) return "11:00〜14:00";
+    if (t.startsWith("15")) return "15:00〜18:00";
+    return t;
+}
+function dateLabelJa(dateStr) {
+    if (!dateStr) return "";
+    const [y, m, d] = dateStr.split("-");
+    const w = ["日","月","火","水","木","金","土"][new Date(dateStr + "T00:00:00").getDay()];
+    return `${y}年${Number(m)}月${Number(d)}日（${w}）`;
+}
+// HTMLエスケープ（わんちゃん名などの表示用）
+function escHtml(s) {
+    return String(s == null ? "" : s).replace(/[&<>"']/g, c =>
+        ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
+}
+
+// マイページ：ログイン中ユーザーのご予約一覧を表示（第2段階フェーズ①・閲覧のみ）
+async function renderMyPage() {
+    const listEl = document.getElementById("mypage-list");
+    if (!listEl || !currentUser) return;
+    listEl.innerHTML = `<p class="mypage-empty">読み込み中…</p>`;
+    try {
+        // 自分の予約(user_id=自分)だけを取得。RLSでも本人のみに制限されるが、
+        // スタッフ(全予約閲覧可)が客用フォームを開いた場合も「自分の分だけ」に絞るため明示。
+        const { data, error } = await _supabase
+            .from("reservations")
+            .select("id, reservation_date, reservation_time, course, dog_name")
+            .eq("user_id", currentUser.id)
+            .order("reservation_date", { ascending: true })
+            .order("reservation_time", { ascending: true });
+        if (error) throw error;
+
+        const rows = data || [];
+        if (rows.length === 0) {
+            listEl.innerHTML = `<p class="mypage-empty">ログイン後にお取りいただいたご予約が、ここに表示されます。</p>`;
+            return;
+        }
+
+        const today = toLocalYmd(new Date());
+        const upcoming = rows.filter(r => r.reservation_date >= today);
+        const past     = rows.filter(r => r.reservation_date <  today)
+                             .sort((a, b) => b.reservation_date.localeCompare(a.reservation_date)); // 過去は新しい順
+
+        const item = r => `
+            <li class="mypage-item">
+                <span class="mypage-date">${dateLabelJa(r.reservation_date)}</span>
+                <span class="mypage-meta">${timeRangeLabelJa(r.reservation_time)} ／ ${courseLabelJa(r.course)}${r.dog_name ? " ／ " + escHtml(r.dog_name) + "ちゃん" : ""}</span>
+            </li>`;
+
+        let html = "";
+        html += `<div class="mypage-group"><h4 class="mypage-subhead">今後のご予約</h4>`;
+        html += upcoming.length
+            ? `<ul class="mypage-ul">${upcoming.map(item).join("")}</ul>`
+            : `<p class="mypage-empty">今後のご予約はありません。</p>`;
+        html += `</div>`;
+        if (past.length) {
+            html += `<div class="mypage-group"><h4 class="mypage-subhead">過去のご予約</h4>`;
+            html += `<ul class="mypage-ul mypage-past">${past.map(item).join("")}</ul></div>`;
+        }
+        listEl.innerHTML = html;
+    } catch (e) {
+        console.warn("マイページの予約取得に失敗", e);
+        listEl.innerHTML = `<p class="mypage-empty">ご予約の読み込みに失敗しました。時間をおいて再度お試しください。</p>`;
+    }
 }
 
 // 予約成功後：入力内容をプロフィール／わんちゃんに保存（次回の自動入力用）
