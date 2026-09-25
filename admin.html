@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>管理画面 — ANELLA CAFE トリミング予約</title>
-    <link rel="stylesheet" href="style.css?v=20260924a">
+    <link rel="stylesheet" href="style.css?v=20260925a">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
@@ -434,9 +434,11 @@ function renderTable() {
     filtered.forEach(res => {
         const { label, cls } = formatTime(res.reservation_time);
         const idx = allReservations.indexOf(res);
+        const cancelled = res.status === "cancelled";
         const tr = document.createElement("tr");
+        if (cancelled) tr.className = "row-cancelled";
         tr.innerHTML = `
-            <td><strong>${res.reservation_date}</strong></td>
+            <td><strong>${res.reservation_date}</strong>${cancelled ? ' <span class="cancel-badge">キャンセル済み</span>' : ''}</td>
             <td><span class="time-badge ${cls}">${label}</span></td>
             <td>${res.owner_name || "—"}</td>
             <td><strong>${res.dog_name || "—"}</strong></td>

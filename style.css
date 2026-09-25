@@ -336,7 +336,12 @@ input[type="file"] {
   border-radius: var(--radius-md);
   padding: 10px 14px;
   box-shadow: var(--shadow-input);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
 }
+.mypage-item-body { min-width: 0; }
 .mypage-date {
   display: block;
   font-weight: 700;
@@ -349,6 +354,35 @@ input[type="file"] {
   color: var(--color-mid);
   margin-top: 2px;
 }
+.mypage-cancel-btn {
+  flex-shrink: 0;
+  background: none;
+  border: 1px solid var(--color-error);
+  color: var(--color-error);
+  border-radius: var(--radius-sm);
+  font-size: 0.82rem;
+  font-family: var(--font-body);
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.mypage-cancel-btn:hover { background: var(--color-error); color: #fff; }
+.mypage-note-inline {
+  flex-shrink: 0;
+  font-size: 0.75rem;
+  color: var(--color-primary);
+  text-align: right;
+  max-width: 40%;
+}
+.mypage-status-badge {
+  flex-shrink: 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--color-error);
+  border: 1px solid var(--color-error);
+  border-radius: var(--radius-sm);
+  padding: 2px 8px;
+}
 .mypage-past .mypage-item { opacity: 0.72; }
 .mypage-empty {
   font-size: 0.85rem;
@@ -356,6 +390,22 @@ input[type="file"] {
   padding: 4px 0;
 }
 .mypage-foot { margin-top: 12px; }
+
+/* 管理画面：キャンセル済み予約の表示 */
+.row-cancelled { opacity: 0.6; }
+.row-cancelled td:first-child { text-decoration: line-through; }
+.cancel-badge {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #fff;
+  background: var(--color-error);
+  border-radius: var(--radius-sm);
+  padding: 1px 7px;
+  margin-left: 6px;
+  text-decoration: none;
+  vertical-align: middle;
+}
 
 /* ── トースト通知 ── */
 #toast {

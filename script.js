@@ -168,7 +168,7 @@ function escHtml(s) {
         ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
 }
 
-// マイページ：ログイン中ユーザーのご予約一覧を表示（第2段階フェーズ①・閲覧のみ）
+// マイページ：ログイン中ユーザーのご予約一覧を表示（第2段階：確認＋キャンセル）
 async function renderMyPage() {
     const listEl = document.getElementById("mypage-list");
     if (!listEl || !currentUser) return;
@@ -178,7 +178,7 @@ async function renderMyPage() {
         // スタッフ(全予約閲覧可)が客用フォームを開いた場合も「自分の分だけ」に絞るため明示。
         const { data, error } = await _supabase
             .from("reservations")
-            .select("id, reservation_date, reservation_time, course, dog_name")
+            .select("id, reservation_date, reservation_time, course, dog_name, status")
             .eq("user_id", currentUser.id)
             .order("reservation_date", { ascending: true })
             .order("reservation_time", { ascending: true });
@@ -191,25 +191,40 @@ async function renderMyPage() {
         }
 
         const today = toLocalYmd(new Date());
-        const upcoming = rows.filter(r => r.reservation_date >= today);
-        const past     = rows.filter(r => r.reservation_date <  today)
-                             .sort((a, b) => b.reservation_date.localeCompare(a.reservation_date)); // 過去は新しい順
+        const active    = rows.filter(r => r.status !== "cancelled");
+        const cancelled = rows.filter(r => r.status === "cancelled")
+                              .sort((a, b) => b.reservation_date.localeCompare(a.reservation_date));
+        const upcoming  = active.filter(r => r.reservation_date >= today);
+        const past      = active.filter(r => r.reservation_date <  today)
+                                .sort((a, b) => b.reservation_date.localeCompare(a.reservation_date));
 
-        const item = r => `
-            <li class="mypage-item">
-                <span class="mypage-date">${dateLabelJa(r.reservation_date)}</span>
-                <span class="mypage-meta">${timeRangeLabelJa(r.reservation_time)} ／ ${courseLabelJa(r.course)}${r.dog_name ? " ／ " + escHtml(r.dog_name) + "ちゃん" : ""}</span>
-            </li>`;
+        const line = r =>
+            `<span class="mypage-date">${dateLabelJa(r.reservation_date)}</span>` +
+            `<span class="mypage-meta">${timeRangeLabelJa(r.reservation_time)} ／ ${courseLabelJa(r.course)}${r.dog_name ? " ／ " + escHtml(r.dog_name) + "ちゃん" : ""}</span>`;
+
+        const upcomingItem = r => {
+            const cancellable = r.reservation_date > today; // 前日まで（予約日当日・以降は不可）
+            const action = cancellable
+                ? `<button type="button" class="mypage-cancel-btn" onclick="cancelMyReservation(${r.id}, '${r.reservation_date}')">キャンセル</button>`
+                : `<span class="mypage-note-inline">当日のキャンセルはお電話ください</span>`;
+            return `<li class="mypage-item"><div class="mypage-item-body">${line(r)}</div>${action}</li>`;
+        };
+        const plainItem = r => `<li class="mypage-item"><div class="mypage-item-body">${line(r)}</div></li>`;
+        const cancelledItem = r => `<li class="mypage-item mypage-cancelled"><div class="mypage-item-body">${line(r)}</div><span class="mypage-status-badge">キャンセル済み</span></li>`;
 
         let html = "";
         html += `<div class="mypage-group"><h4 class="mypage-subhead">今後のご予約</h4>`;
         html += upcoming.length
-            ? `<ul class="mypage-ul">${upcoming.map(item).join("")}</ul>`
+            ? `<ul class="mypage-ul">${upcoming.map(upcomingItem).join("")}</ul>`
             : `<p class="mypage-empty">今後のご予約はありません。</p>`;
         html += `</div>`;
         if (past.length) {
             html += `<div class="mypage-group"><h4 class="mypage-subhead">過去のご予約</h4>`;
-            html += `<ul class="mypage-ul mypage-past">${past.map(item).join("")}</ul></div>`;
+            html += `<ul class="mypage-ul mypage-past">${past.map(plainItem).join("")}</ul></div>`;
+        }
+        if (cancelled.length) {
+            html += `<div class="mypage-group"><h4 class="mypage-subhead">キャンセル済み</h4>`;
+            html += `<ul class="mypage-ul mypage-past">${cancelled.map(cancelledItem).join("")}</ul></div>`;
         }
         listEl.innerHTML = html;
     } catch (e) {
@@ -217,6 +232,31 @@ async function renderMyPage() {
         listEl.innerHTML = `<p class="mypage-empty">ご予約の読み込みに失敗しました。時間をおいて再度お試しください。</p>`;
     }
 }
+
+// マイページ：予約をキャンセル（本人・前日まで。サーバー側RPCで本人/締切/二重を再検査）
+window.cancelMyReservation = async function(id, dateStr) {
+    const nice = dateLabelJa(dateStr);
+    if (!confirm(`${nice} のご予約をキャンセルします。よろしいですか？\n（キャンセル後は元に戻せません。ご希望の場合は再度ご予約ください）`)) return;
+    try {
+        const { data, error } = await _supabase.rpc("cancel_reservation", { p_id: id });
+        if (error) throw error;
+        if (data === "ok") {
+            showToast("ご予約をキャンセルしました。", "success");
+        } else {
+            const msg = {
+                too_late:          "前日を過ぎているため、この画面ではキャンセルできません。お手数ですがお電話ください。",
+                already_cancelled: "このご予約はすでにキャンセル済みです。",
+                not_owner:         "ご本人のご予約のみキャンセルできます。",
+                not_found:         "ご予約が見つかりませんでした。",
+            };
+            showToast(msg[data] || "キャンセルできませんでした。時間をおいて再度お試しください。", "error");
+        }
+        await renderMyPage();
+    } catch (e) {
+        console.warn("キャンセル処理に失敗", e);
+        showToast("キャンセルに失敗しました。時間をおいて再度お試しください。", "error");
+    }
+};
 
 // 予約成功後：入力内容をプロフィール／わんちゃんに保存（次回の自動入力用）
 // ※ 安全管理のためワクチン情報・証明書画像は保存対象に含めません（毎回確認）。
