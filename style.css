@@ -390,6 +390,31 @@ input[type="file"] {
   padding: 4px 0;
 }
 .mypage-foot { margin-top: 12px; }
+.mypage-actions { flex-shrink: 0; display: flex; gap: 8px; }
+.mypage-change-btn {
+  background: none;
+  border: 1px solid var(--color-primary);
+  color: var(--color-mid);
+  border-radius: var(--radius-sm);
+  font-size: 0.82rem;
+  font-family: var(--font-body);
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.mypage-change-btn:hover { background: var(--color-primary); color: #fff; }
+
+/* 予約変更モードのバナー */
+.reschedule-banner {
+  background: var(--color-cream);
+  border: 1.5px solid var(--color-primary);
+  border-radius: var(--radius-md);
+  padding: 16px 18px;
+  margin-bottom: 20px;
+}
+.reschedule-title { font-weight: 700; color: var(--color-deep); font-size: 1.02rem; margin-bottom: 6px; }
+.reschedule-desc  { font-size: 0.9rem; color: var(--color-mid); font-weight: 600; margin-bottom: 6px; }
+.reschedule-hint  { font-size: 0.85rem; color: var(--color-mid); line-height: 1.6; margin-bottom: 8px; }
 
 /* 管理画面：キャンセル済み予約の表示 */
 .row-cancelled { opacity: 0.6; }
@@ -404,6 +429,17 @@ input[type="file"] {
   padding: 1px 7px;
   margin-left: 6px;
   text-decoration: none;
+  vertical-align: middle;
+}
+.reschedule-badge {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #fff;
+  background: var(--color-info);
+  border-radius: var(--radius-sm);
+  padding: 1px 7px;
+  margin-left: 6px;
   vertical-align: middle;
 }
 

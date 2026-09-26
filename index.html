@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ご予約フォーム — ANELLA CAFE 南浦和店</title>
-    <link rel="stylesheet" href="style.css?v=20260925a">
+    <link rel="stylesheet" href="style.css?v=20260926a">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
@@ -65,8 +65,16 @@
 
         <form id="reservation-form" novalidate>
 
+            <!-- 予約変更モードのバナー（通常は非表示） -->
+            <div id="reschedule-banner" class="reschedule-banner" style="display:none;">
+                <p class="reschedule-title">✏️ ご予約の変更</p>
+                <p class="reschedule-desc" id="reschedule-desc"></p>
+                <p class="reschedule-hint">新しい「コース」「ご要望」「日時」を選び直し、下の<strong>「この内容に変更する」</strong>を押してください。</p>
+                <button type="button" id="reschedule-cancel-btn" class="auth-link">変更をやめる</button>
+            </div>
+
             <!-- ── お客様情報 ── -->
-            <div class="card">
+            <div class="card rs-hideable">
                 <h2 class="section-heading">飼い主様の情報</h2>
 
                 <div class="form-group">
@@ -107,7 +115,7 @@
             </div>
 
             <!-- ── わんちゃん情報 ── -->
-            <div class="card">
+            <div class="card rs-hideable">
                 <h2 class="section-heading">わんちゃんの情報</h2>
 
                 <div class="form-group">
@@ -187,7 +195,7 @@
             </div>
 
             <!-- ── ワクチン情報 ── -->
-            <div class="card">
+            <div class="card rs-hideable">
                 <h2 class="section-heading">ワクチン・健康管理</h2>
 
                 <div class="form-group">
@@ -324,7 +332,7 @@
             </div>
 
             <!-- ── 利用規約同意 ── -->
-            <div class="card">
+            <div class="card rs-hideable">
                 <h2 class="section-heading">ご利用規約</h2>
                 <div class="terms-box">
                     <p class="terms-title">トリミング・ホテルご利用規約 兼 同意書</p>
@@ -388,6 +396,7 @@
                 </div>
             </div>
 
+            <button type="button" id="reschedule-confirm-btn" class="submit-btn" style="display:none;">この内容に変更する →</button>
             <button type="submit" id="submit-btn" class="submit-btn">予約を確定する →</button>
 
         </form>
@@ -429,6 +438,6 @@
     <!-- トースト通知 -->
     <div id="toast"></div>
 
-    <script src="script.js?v=20260925a"></script>
+    <script src="script.js?v=20260926a"></script>
 </body>
 </html>

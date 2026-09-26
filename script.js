@@ -18,6 +18,8 @@ async function uploadCertImage(inputId, label) {
 // ══════════════════════════════════
 let currentUser = null;   // ログイン中のユーザー（未ログインは null）
 let pendingEmail = "";    // 確認コード送信先のメール
+let myReservations = [];  // マイページに表示中の自分の予約（変更モードで参照）
+let rescheduleId = null;  // 変更中の予約ID（null=通常の新規予約モード）
 
 // 入力欄への安全なセット（値が空/未定義なら触らない）
 function setVal(id, v) {
@@ -178,13 +180,14 @@ async function renderMyPage() {
         // スタッフ(全予約閲覧可)が客用フォームを開いた場合も「自分の分だけ」に絞るため明示。
         const { data, error } = await _supabase
             .from("reservations")
-            .select("id, reservation_date, reservation_time, course, dog_name, status")
+            .select("id, reservation_date, reservation_time, course, dog_name, status, booking_request, options_request")
             .eq("user_id", currentUser.id)
             .order("reservation_date", { ascending: true })
             .order("reservation_time", { ascending: true });
         if (error) throw error;
 
         const rows = data || [];
+        myReservations = rows;   // 変更モードで参照するため保持
         if (rows.length === 0) {
             listEl.innerHTML = `<p class="mypage-empty">ログイン後にお取りいただいたご予約が、ここに表示されます。</p>`;
             return;
@@ -203,10 +206,13 @@ async function renderMyPage() {
             `<span class="mypage-meta">${timeRangeLabelJa(r.reservation_time)} ／ ${courseLabelJa(r.course)}${r.dog_name ? " ／ " + escHtml(r.dog_name) + "ちゃん" : ""}</span>`;
 
         const upcomingItem = r => {
-            const cancellable = r.reservation_date > today; // 前日まで（予約日当日・以降は不可）
-            const action = cancellable
-                ? `<button type="button" class="mypage-cancel-btn" onclick="cancelMyReservation(${r.id}, '${r.reservation_date}')">キャンセル</button>`
-                : `<span class="mypage-note-inline">当日のキャンセルはお電話ください</span>`;
+            const editable = r.reservation_date > today; // 前日まで（予約日当日・以降は不可）
+            const action = editable
+                ? `<div class="mypage-actions">` +
+                    `<button type="button" class="mypage-change-btn" onclick="startReschedule(${r.id})">変更</button>` +
+                    `<button type="button" class="mypage-cancel-btn" onclick="cancelMyReservation(${r.id}, '${r.reservation_date}')">キャンセル</button>` +
+                  `</div>`
+                : `<span class="mypage-note-inline">当日の変更・キャンセルはお電話ください</span>`;
             return `<li class="mypage-item"><div class="mypage-item-body">${line(r)}</div>${action}</li>`;
         };
         const plainItem = r => `<li class="mypage-item"><div class="mypage-item-body">${line(r)}</div></li>`;
@@ -257,6 +263,97 @@ window.cancelMyReservation = async function(id, dateStr) {
         showToast("キャンセルに失敗しました。時間をおいて再度お試しください。", "error");
     }
 };
+
+// ── マイページ：予約の変更（日時・コース・要望） ──
+// 既存の予約フォーム（コース／要望／日時カレンダー）を「変更モード」で流用する。
+window.startReschedule = function(id) {
+    const r = (myReservations || []).find(x => x.id === id);
+    if (!r) return;
+    rescheduleId = id;
+
+    // 変更に関係ないカードと通常の送信ボタンを隠す
+    document.querySelectorAll(".rs-hideable").forEach(el => { el.style.display = "none"; });
+    document.getElementById("submit-btn").style.display = "none";
+    document.getElementById("reschedule-confirm-btn").style.display = "";
+
+    // バナー表示（現在のご予約内容）
+    const banner = document.getElementById("reschedule-banner");
+    document.getElementById("reschedule-desc").textContent =
+        `現在のご予約：${dateLabelJa(r.reservation_date)} ${timeRangeLabelJa(r.reservation_time)} ／ ${courseLabelJa(r.course)}`;
+    banner.style.display = "block";
+
+    // コースを現在の値に、要望をプレフィル（空なら空に上書き）
+    setRadio("course", r.course);
+    document.getElementById("booking_request").value = r.booking_request || "";
+    document.getElementById("options_request").value = r.options_request || "";
+
+    // 日時は選び直してもらう（未選択にリセット）
+    calSelectedDate = null;
+    document.getElementById("reservation_date").value = "";
+    const timeSel = document.getElementById("reservation_time");
+    timeSel.innerHTML = '<option value="">まず予約日を選んでください</option>';
+    timeSel.disabled = true;
+    const selLabel = document.getElementById("cal-selected-label");
+    if (selLabel) selLabel.style.display = "none";
+    renderCalendar();
+
+    banner.scrollIntoView({ behavior: "smooth", block: "start" });
+};
+
+// 変更モードを終了して通常表示に戻す
+function exitReschedule() {
+    rescheduleId = null;
+    document.querySelectorAll(".rs-hideable").forEach(el => { el.style.display = ""; });
+    document.getElementById("submit-btn").style.display = "";
+    document.getElementById("reschedule-confirm-btn").style.display = "none";
+    document.getElementById("reschedule-banner").style.display = "none";
+}
+
+// 「この内容に変更する」：サーバー側RPCで本人/締切/二重予約を再検査してから更新
+async function confirmReschedule() {
+    if (!rescheduleId) return;
+    const course = getSelectedCourse();
+    const date   = document.getElementById("reservation_date").value;
+    const time   = document.getElementById("reservation_time").value;
+    if (!course)        { showToast("コースを選択してください。", "error"); return; }
+    if (!date || !time) { showToast("新しいご予約日時を選択してください。", "error"); return; }
+    if (isClosedDay(date)) { showToast("この日はお休みです。別の日をお選びください。", "error"); return; }
+
+    const btn = document.getElementById("reschedule-confirm-btn");
+    btn.disabled = true; btn.textContent = "変更中...";
+    try {
+        const { data, error } = await _supabase.rpc("reschedule_reservation", {
+            p_id:              rescheduleId,
+            p_date:            date,
+            p_time:            time,
+            p_course:          course,
+            p_booking_request: document.getElementById("booking_request").value.trim(),
+            p_options_request: document.getElementById("options_request").value.trim(),
+        });
+        if (error) throw error;
+        if (data === "ok") {
+            showToast("ご予約を変更しました。", "success");
+            exitReschedule();
+            await renderMyPage();
+            document.getElementById("mypage").scrollIntoView({ behavior: "smooth", block: "start" });
+        } else {
+            const msg = {
+                slot_taken: "申し訳ありません、選んだ日時はちょうど埋まってしまいました。別の日時をお選びください。",
+                too_late:   "前日を過ぎているため、この画面では変更できません。お手数ですがお電話ください。",
+                not_owner:  "ご本人のご予約のみ変更できます。",
+                cancelled:  "キャンセル済みのご予約は変更できません。",
+                not_found:  "ご予約が見つかりませんでした。",
+                bad_date:   "変更先の日付が正しくありません。",
+            };
+            showToast(msg[data] || "変更できませんでした。時間をおいて再度お試しください。", "error");
+        }
+    } catch (e) {
+        console.warn("変更処理に失敗", e);
+        showToast("変更に失敗しました。時間をおいて再度お試しください。", "error");
+    } finally {
+        btn.disabled = false; btn.textContent = "この内容に変更する →";
+    }
+}
 
 // 予約成功後：入力内容をプロフィール／わんちゃんに保存（次回の自動入力用）
 // ※ 安全管理のためワクチン情報・証明書画像は保存対象に含めません（毎回確認）。
@@ -314,6 +411,9 @@ async function initAuth() {
         document.getElementById("auth-step-code").style.display = "none";
         document.getElementById("auth-step-email").style.display = "block";
     });
+    // 予約変更モードのボタン
+    document.getElementById("reschedule-confirm-btn")?.addEventListener("click", confirmReschedule);
+    document.getElementById("reschedule-cancel-btn")?.addEventListener("click", exitReschedule);
     // Enterキーでの誤送信を避けつつ、コード欄はEnterで確定できるように
     document.getElementById("auth_code")?.addEventListener("keydown", (e) => {
         if (e.key === "Enter") { e.preventDefault(); authVerifyCode(); }
@@ -694,6 +794,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     // ── フォーム送信 ──
     form.addEventListener("submit", async (e) => {
         e.preventDefault();
+        // 変更モード中は通常の新規予約送信を行わない（変更は専用ボタンで確定）
+        if (rescheduleId) return;
         if (!validateForm()) {
             document.querySelector(".is-invalid, .field-error.visible")
                 ?.scrollIntoView({ behavior: "smooth", block: "center" });
