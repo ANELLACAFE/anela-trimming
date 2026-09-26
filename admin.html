@@ -332,6 +332,17 @@ function formatTime(timeStr) {
     if (hh === "15:00") return { label: "15:00〜18:00", cls: "pm" };
     return { label: hh, cls: "" };
 }
+const WEEKDAYS_JA = ["日", "月", "火", "水", "木", "金", "土"];
+function weekdayJa(dateStr) {
+    const m = String(dateStr || "").match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (!m) return "";
+    const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+    return isNaN(d) ? "" : WEEKDAYS_JA[d.getDay()];
+}
+function formatDateJa(dateStr) {
+    const w = weekdayJa(dateStr);
+    return w ? `${dateStr}（${w}）` : (dateStr || "");
+}
 function val(v) {
     return (v && String(v).trim()) ? v : '<span class="detail-value empty">未入力</span>';
 }
@@ -441,7 +452,7 @@ function renderTable() {
         const badge = cancelled ? ' <span class="cancel-badge">キャンセル済み</span>'
                     : rescheduled ? ' <span class="reschedule-badge">変更あり</span>' : '';
         tr.innerHTML = `
-            <td><strong>${res.reservation_date}</strong>${badge}</td>
+            <td><strong>${formatDateJa(res.reservation_date)}</strong>${badge}</td>
             <td><span class="time-badge ${cls}">${label}</span></td>
             <td>${res.owner_name || "—"}</td>
             <td><strong>${res.dog_name || "—"}</strong></td>
@@ -539,7 +550,7 @@ function setModalMode(mode) {
 
         const { label } = formatTime(res.reservation_time);
         const items = [
-            { label: "予約日",              value: res.reservation_date },
+            { label: "予約日",              value: formatDateJa(res.reservation_date) },
             { label: "予約時間枠",          value: label },
             { label: "コース",              value: res.course === "trimming" ? "✂️ トリミングコース" : res.course === "shampoo" ? "🛁 シャンプーコース" : res.course },
             { label: "飼い主氏名",          value: res.owner_name },
@@ -577,7 +588,7 @@ function setModalMode(mode) {
                 <div style="margin-top:8px;display:flex;flex-direction:column;gap:6px;">
                     ${historyItems.sort((a,b) => b.reservation_date.localeCompare(a.reservation_date)).map(r => `
                     <div onclick="openHistoryKarte(${r.id})" style="background:#fdf6f0;border-radius:6px;padding:8px 12px;font-size:0.88em;display:flex;gap:12px;align-items:center;cursor:pointer;border:1px solid transparent;" onmouseover="this.style.borderColor='#bda286'" onmouseout="this.style.borderColor='transparent'">
-                        <span style="color:#bda286;font-weight:bold;min-width:90px;">${r.reservation_date}</span>
+                        <span style="color:#bda286;font-weight:bold;min-width:110px;">${formatDateJa(r.reservation_date)}</span>
                         <span>${r.dog_name}（${r.breed || "犬種未記入"}）</span>
                         <span style="color:#aaa;">${formatTime(r.reservation_time).label}</span>
                         <span style="margin-left:auto;color:#bda286;font-size:0.85em;">→ カルテを見る</span>
@@ -793,7 +804,7 @@ window.confirmDelete = function(index) {
     const res = allReservations[index];
     pendingDeleteIndex = index;
     document.getElementById("confirm-message").innerHTML =
-        `<span class="confirm-name">${res.dog_name}（${res.owner_name}様）</span><br>${res.reservation_date} の予約を削除しますか？<br><small style="color:#e74c3c">この操作は元に戻せません。</small>`;
+        `<span class="confirm-name">${res.dog_name}（${res.owner_name}様）</span><br>${formatDateJa(res.reservation_date)} の予約を削除しますか？<br><small style="color:#e74c3c">この操作は元に戻せません。</small>`;
     document.getElementById("confirm-dialog").classList.add("open");
 };
 document.getElementById("confirm-cancel-btn").addEventListener("click", () => {
