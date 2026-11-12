@@ -6,8 +6,11 @@ const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 async function uploadCertImage(inputId, label) {
     const file = document.getElementById(inputId)?.files[0];
     if (!file) return "未提出";
-    const path = `certificates/${Date.now()}_${label}_${file.name}`;
-    const { error } = await _supabase.storage.from("trimming-photos").upload(path, file, { upsert: true });
+    // 容量対策：長い辺1600pxのJPEGに縮小してから保存（image-compress.js）
+    const { blob, ext } = await compressImage(file);
+    const path = `certificates/${Date.now()}_${label}.${ext}`;
+    const { error } = await _supabase.storage.from("trimming-photos")
+        .upload(path, blob, { upsert: false, contentType: blob.type || file.type || "image/jpeg" });
     if (error) { console.error("画像アップロードエラー:", error); return file.name; }
     const { data } = _supabase.storage.from("trimming-photos").getPublicUrl(path);
     return data.publicUrl;
@@ -828,12 +831,11 @@ document.addEventListener("DOMContentLoaded", async () => {
             console.warn("ブラックリストチェック失敗（スキップ）", e);
         }
 
-        const [rabiesImgUrl, vaccineImgUrl, fleaImgUrl, heartwormImgUrl] = await Promise.all([
-            uploadCertImage("rabies_image",    "rabies"),
-            uploadCertImage("vaccine_image",   "vaccine"),
-            uploadCertImage("flea_tick_image", "flea"),
-            uploadCertImage("heartworm_image", "heartworm"),
-        ]);
+        // 縮小処理でスマホのメモリを使いすぎないよう、1枚ずつ順番に保存
+        const rabiesImgUrl    = await uploadCertImage("rabies_image",    "rabies");
+        const vaccineImgUrl   = await uploadCertImage("vaccine_image",   "vaccine");
+        const fleaImgUrl      = await uploadCertImage("flea_tick_image", "flea");
+        const heartwormImgUrl = await uploadCertImage("heartworm_image", "heartworm");
 
         const reservationData = {
             owner_name:          document.getElementById("owner_name").value.trim(),
