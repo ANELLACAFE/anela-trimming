@@ -16,12 +16,26 @@ function loadImageElement(blob) {
     });
 }
 
+// 写真置き場は「画像(image/*)だけ」受け付ける設定（supabase/storage_upload_limit.sql）。
+// supabase-js はファイル自身の種類(type)で送るため、ブラウザが種類を判定できないファイル
+// （WindowsのChromeでHEICを選んだ時など＝typeが空）は画像以外として、はじかれてしまう。
+// typeが空の時だけ、拡張子から画像の種類を付け直す。
+const IMAGE_TYPES_BY_EXT = {
+    jpg: "image/jpeg", jpeg: "image/jpeg", png: "image/png", gif: "image/gif", webp: "image/webp",
+    heic: "image/heic", heif: "image/heif", avif: "image/avif", bmp: "image/bmp", tif: "image/tiff", tiff: "image/tiff"
+};
+function withImageType(file, ext) {
+    if (file.type || !IMAGE_TYPES_BY_EXT[ext]) return file;
+    return new Blob([file], { type: IMAGE_TYPES_BY_EXT[ext] });
+}
+
 // 戻り値: { blob, ext, compressed } … ext は保存ファイル名に付ける拡張子
 async function compressImage(file, maxSide = IMAGE_MAX_SIDE, quality = IMAGE_QUALITY) {
     const originalExt = ((file.name || "").split(".").pop() || "jpg").toLowerCase();
-    const original = { blob: file, ext: originalExt, compressed: false };
+    const original = { blob: withImageType(file, originalExt), ext: originalExt, compressed: false };
     try {
-        if (!file || !String(file.type).startsWith("image/")) return original;
+        // 種類が空のファイルも、読み込めれば縮小する（読み込めなければ元のまま）
+        if (!file || (file.type && !String(file.type).startsWith("image/"))) return original;
         // <img> 経由で描くと、スマホ写真の向き（縦横の回転情報）が反映される
         const img = await loadImageElement(file);
         const scale = Math.min(1, maxSide / Math.max(img.naturalWidth, img.naturalHeight));
